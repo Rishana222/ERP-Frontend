@@ -31,6 +31,7 @@ import User from './Pages/User';
 import Roles from './Pages/Roles';
 
 import 'antd/dist/reset.css';
+import { ConfigProvider } from 'antd';
 
 
 
@@ -143,7 +144,30 @@ const router = createBrowserRouter([
 ]);
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <ConfigProvider
+  theme={{
+    token: {
+      colorPrimary: '#b3b3cc', // `#29293d`-nte kurachoode light aaya version (Buttons-inu)
+      colorBgContainer: '#ffffff', 
+      borderRadius: 10, // Kurachoode modern aakkan vendi rounding kootti
+      fontFamily: "'Inter', sans-serif",
+    },
+    components: {
+      Layout: {
+        siderBg: '#29293d', // Sider-nu nee paranja aa exact Deep Slate color
+        headerBg: '#ffffff', 
+        bodyBg: '#f0f0f5',   // Background-nu oru light slate tint (Grey-ish blue)
+      },
+      Menu: {
+        darkItemBg: '#29293d',
+        darkItemSelectedBg: '#4d4d70', // Selected portion
+        darkItemSelectedColor: '#ffffff',
+      },
+    },
+  }}
+>
+      <RouterProvider router={router} />
+    </ConfigProvider>
     
-    <RouterProvider router={router} />
   </StrictMode>
 );
