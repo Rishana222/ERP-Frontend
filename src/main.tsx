@@ -5,10 +5,13 @@ import App from './App';
 import Dashboard from './Pages/Dashboard';
 import Products from './Pages/Products';
 import Categories from './Pages/Categories';
+import SubCategory from './Pages/SubCategory';
 import Tax from './Pages/Tax';
 import Units from './Pages/Units';
 import Customers from './Pages/Customers';
 import Vendors from './Pages/Vendors';
+import Shop from './Pages/Shop';
+import Variant from './Pages/Variant';
 
 import Sales from './Pages/Sales';
 import Invoices from './Pages/Invoices';
@@ -55,6 +58,10 @@ const router = createBrowserRouter([
         path: '/categories',
         element: <Categories />,
       },
+      {
+        path: '/sub-categories',
+        element: <SubCategory />, // ✅ ADDED
+      },
        {
         path: '/units',
         element: <Units />,      // ✅ ADDED
@@ -70,6 +77,14 @@ const router = createBrowserRouter([
       {
         path: '/vendors',
         element: <Vendors />,
+      },
+      {
+        path: '/shops',
+        element: <Shop />,
+      },
+      {
+        path: '/variants',
+        element: <Variant />,    // ✅ ADDED
       },
 
       // Sales

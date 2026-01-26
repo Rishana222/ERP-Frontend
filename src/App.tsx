@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Layout, Menu, Button, theme } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import logo from './assets/Screenshot__49_-removebg-preview.png';
+import logo from './assets/Screenshot__54_-removebg-preview.png';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -46,7 +46,7 @@ const App = () => {
           <img
             src={logo}
             alt="Logo"
-            style={{ height: '90px', width: 'auto', marginTop: '25px' }}
+            style={{ height: '125px', width: 'auto', marginTop: '55px' }}
           />
         </div>
 
@@ -70,10 +70,13 @@ const App = () => {
               children: [
                 { key: '/products', label: 'Products' },
                 { key: '/categories', label: 'Categories' },
+                { key: '/sub-categories', label: 'SubCategories' },
                 { key: '/units', label: 'Units' },
                 { key: '/taxes', label: 'Taxes' },
                 { key: '/customers', label: 'Customers' },
                 { key: '/vendors', label: 'Vendors' },
+                { key: '/shops', label: 'Shops/Branches' },
+                {key: '/variants', label: 'Variants' }
               ],
             },
 
@@ -82,11 +85,10 @@ const App = () => {
               icon: <ShoppingCartOutlined />,
               label: 'Sales',
               children: [
-                { key: '/sales', label: 'Sales' },
+                { key: '/sales', label: 'New Sale' },
                 { key: '/invoices', label: 'Invoices' },
                 { key: '/sales-return', label: 'Sales Return' },
                 { key: '/receipts', label: 'Receipts' },
-                { key: '/customers', label: 'Customer' },
               ],
             },
 
@@ -95,20 +97,19 @@ const App = () => {
               icon: <ShoppingOutlined />,
               label: 'Purchase',
               children: [
-                { key: '/purchase', label: 'Purchase' },
+                { key: '/purchase', label: 'New Purchase' },
                 { key: '/purchase-return', label: 'Purchase Return' },
-                { key: '/payments', label: 'Payments' },
-                { key: '/vendors', label: 'Vendors' },
+                { key: '/payments', label: 'Vendor Payments' },
               ],
             },
 
             {
               key: 'stock',
               icon: <DatabaseOutlined />,
-              label: 'Stock',
+              label: 'Inventory',
               children: [
-                { key: '/stock', label: 'Stock List' },
-                { key: '/stock-movement', label: 'Stock Movement' },
+                { key: '/stock', label: 'Stock Overview' },
+                { key: '/stock-movement', label: 'Stock History' },
               ],
             },
 
