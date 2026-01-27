@@ -7,12 +7,14 @@ import {
   Input,
   Switch,
   Select,
-  Popconfirm,
 } from "antd";
+import type { ColumnsType } from "antd/es/table";
 
 const { Option } = Select;
 
-interface SubCategoryFormValues {
+/* ---------- Types ---------- */
+interface SubCategoryData {
+  key: string;
   name: string;
   category: string;
   shop: string;
@@ -21,118 +23,213 @@ interface SubCategoryFormValues {
 }
 
 const SubCategories: React.FC = () => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [form] = Form.useForm<SubCategoryFormValues>();
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editingSubCategory, setEditingSubCategory] =
+    useState<SubCategoryData | null>(null);
 
-  const openAddModal = () => {
-    setIsEdit(false);
-    form.resetFields();
-    setModalVisible(true);
-  };
+  const [addForm] = Form.useForm<SubCategoryData>();
+  const [editForm] = Form.useForm<SubCategoryData>();
 
-  const openEditModal = () => {
-    setIsEdit(true);
-    setModalVisible(true);
-  };
-
-  const handleSubmit = (values: SubCategoryFormValues) => {
-    console.log(isEdit ? "UPDATE SUBCATEGORY:" : "ADD SUBCATEGORY:", values);
-    setModalVisible(false);
-  };
-
-  const handleDelete = () => {
-    console.log("DELETE SUBCATEGORY");
-  };
-
-  const columns = [
-    { title: "SubCategory Name", dataIndex: "name" },
-    { title: "Category", dataIndex: "category" },
-    { title: "Shop", dataIndex: "shop" },
+  /* ---------- Columns ---------- */
+  const columns: ColumnsType<SubCategoryData> = [
+    { title: "SubCategory Name", dataIndex: "name", width: 200 },
+    { title: "Category", dataIndex: "category", width: 200 },
+    { title: "Shop", dataIndex: "shop", width: 200 },
     { title: "Description", dataIndex: "description" },
     {
       title: "Active",
       dataIndex: "isActive",
+      width: 100,
       render: (val: boolean) => (val ? "Yes" : "No"),
     },
     {
       title: "Action",
-      render: () => (
-        <>
-          <Button type="link" onClick={openEditModal}>
+      width: 150,
+      render: (_, record) => (
+        <div className="flex gap-2">
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => {
+              setEditingSubCategory(record);
+              editForm.setFieldsValue(record);
+              setOpenEditModal(true);
+            }}
+          >
             Edit
           </Button>
-          <Popconfirm
-            title="Are you sure to delete this subcategory?"
-            onConfirm={handleDelete}
-          >
-            <Button type="link" danger>
-              Delete
-            </Button>
-          </Popconfirm>
-        </>
+          <Button size="small" danger>
+            Delete
+          </Button>
+        </div>
       ),
     },
   ];
 
   return (
     <div>
-      <Button
-        type="primary"
-        style={{ marginBottom: 16 }}
-        onClick={openAddModal}
-      >
-        Add SubCategory
-      </Button>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Sub Categories</h2>
+        <Button type="primary" onClick={() => setOpenAddModal(true)}>
+          Add SubCategory
+        </Button>
+      </div>
 
-      {/* Design only */}
-      <Table columns={columns} dataSource={[]} />
+      {/* Table */}
+      <Table<SubCategoryData>
+        bordered
+        columns={columns}
+        dataSource={[]} // design only
+        pagination={false}
+        scroll={{ x: "max-content" }}
+        style={{ marginTop: 16 }}
+      />
 
+      {/* Add SubCategory Modal */}
       <Modal
-        title={isEdit ? "Edit SubCategory" : "Add SubCategory"}
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        onOk={() => form.submit()}
-        okText={isEdit ? "Update" : "Add"}
+        title="Add SubCategory"
+        open={openAddModal}
+        onCancel={() => setOpenAddModal(false)}
+        footer={null}
+        destroyOnClose
       >
         <Form
-          form={form}
           layout="vertical"
-          onFinish={handleSubmit}
+          form={addForm}
           initialValues={{ isActive: true }}
+          onFinish={(values) => {
+            console.log("ADD SUBCATEGORY:", values);
+            setOpenAddModal(false);
+            addForm.resetFields();
+          }}
         >
           <Form.Item
-            name="name"
             label="SubCategory Name"
+            name="name"
             rules={[{ required: true }]}
           >
             <Input />
           </Form.Item>
 
+         <Form.Item
+  name="category"
+  label="Category"
+  rules={[{ required: true }]}
+>
+  <Select
+    placeholder="Select category"
+    allowClear
+    showSearch
+    optionFilterProp="label"
+  >
+    {/* categories from API */}
+  </Select>
+</Form.Item>
+
+
           <Form.Item
-            name="category"
-            label="Category"
+            label="Shop"
+            name="shop"
             rules={[{ required: true }]}
           >
-            <Select placeholder="Select Category">
-              {/* options will come from API later */}
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
             <Select placeholder="Select Shop">
               <Option value="Main Shop">Main Shop</Option>
               <Option value="Branch Shop">Branch Shop</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="description" label="Description">
+          <Form.Item label="Description" name="description">
             <Input.TextArea rows={3} />
           </Form.Item>
 
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
+          <Form.Item
+            label="Active"
+            name="isActive"
+            valuePropName="checked"
+          >
             <Switch />
           </Form.Item>
+
+          <Button type="primary" htmlType="submit" className="w-full">
+            Save
+          </Button>
+        </Form>
+      </Modal>
+
+      {/* Edit SubCategory Modal */}
+      <Modal
+        title="Edit SubCategory"
+        open={openEditModal}
+        onCancel={() => {
+          setOpenEditModal(false);
+          setEditingSubCategory(null);
+        }}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          layout="vertical"
+          form={editForm}
+          onFinish={(values) => {
+            console.log("UPDATE SUBCATEGORY:", {
+              ...editingSubCategory,
+              ...values,
+            });
+            setOpenEditModal(false);
+          }}
+        >
+          <Form.Item
+            label="SubCategory Name"
+            name="name"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+
+        <Form.Item
+  name="category"
+  label="Category"
+  rules={[{ required: true }]}
+>
+  <Select
+    placeholder="Select category"
+    allowClear
+    showSearch
+    optionFilterProp="label"
+  >
+    {/* categories from API */}
+  </Select>
+</Form.Item>
+
+
+          <Form.Item
+            label="Shop"
+            name="shop"
+            rules={[{ required: true }]}
+          >
+            <Select>
+              <Option value="Main Shop">Main Shop</Option>
+              <Option value="Branch Shop">Branch Shop</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Description" name="description">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+
+          <Form.Item
+            label="Active"
+            name="isActive"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Button type="primary" htmlType="submit" className="w-full">
+            Update
+          </Button>
         </Form>
       </Modal>
     </div>
