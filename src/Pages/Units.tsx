@@ -1,182 +1,214 @@
 import React, { useState } from "react";
-import type { TableProps } from "antd";
-import { Form, Input, InputNumber, Popconfirm, Table, Typography } from "antd";
+import { Table, Button, Modal, Form, Input, Select, Switch } from "antd";
+import type { TableColumnsType } from "antd";
+import { createStyles } from "antd-style";
 
-interface DataType {
-  key: string;
-  name: string;
-  age: number;
-  address: string;
-}
+const { Option } = Select;
 
-const originData = Array.from({ length: 100 }).map<DataType>((_, i) => ({
-  key: i.toString(),
-  name: `Edward ${i}`,
-  age: 32,
-  address: `London Park no. ${i}`,
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #eaeaea transparent;
+      }
+    }
+  `,
 }));
 
-interface EditableCellProps extends React.HTMLAttributes<HTMLElement> {
-  editing: boolean;
-  dataIndex: string;
-  title: any;
-  inputType: "number" | "text";
-  record: DataType;
-  index: number;
+/* ---------- Types ---------- */
+interface UnitData {
+  key: React.Key;
+  name: string;
+  shortName: string;
+  shop: string;
+  isActive: boolean;
 }
 
-const EditableCell: React.FC<React.PropsWithChildren<EditableCellProps>> = ({
-  editing,
-  dataIndex,
-  title,
-  inputType,
-  record,
-  index,
-  children,
-  ...restProps
-}) => {
-  const inputNode = inputType === "number" ? <InputNumber /> : <Input />;
+/* ---------- Columns ---------- */
+const columns: TableColumnsType<UnitData> = [
+  {
+    title: "Unit Name",
+    dataIndex: "name",
+    width: 200,
+    fixed: "start",
+  },
+  {
+    title: "Short Name",
+    dataIndex: "shortName",
+    width: 150,
+  },
+  {
+    title: "Shop",
+    dataIndex: "shop",
+    width: 200,
+  },
+  {
+    title: "Active",
+    dataIndex: "isActive",
+    width: 100,
+    render: (val: boolean) => (val ? "Yes" : "No"),
+  },
+  {
+    title: "Action",
+    fixed: "end",
+    width: 150,
+    render: () => (
+      <div className="flex gap-2">
+        <a>Edit</a>
+        <a style={{ color: "red" }}>Delete</a>
+      </div>
+    ),
+  },
+];
+
+const Units: React.FC = () => {
+  const { styles } = useStyle();
+
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+
+  const [addForm] = Form.useForm();
+  const [editForm] = Form.useForm();
 
   return (
-    <td {...restProps}>
-      {editing ? (
-        <Form.Item
-          name={dataIndex}
-          style={{ margin: 0 }}
-          rules={[
-            {
-              required: true,
-              message: `Please Input ${title}!`,
-            },
-          ]}
-        >
-          {inputNode}
-        </Form.Item>
-      ) : (
-        children
-      )}
-    </td>
-  );
-};
+    <div>
+      {/* Header */}
+      <div className="flex justify-between items-center  ">
+        <h2 className="text-xl font-semibold">Units Master</h2>
+        <Button type="primary" onClick={() => setOpenAddModal(true)}>
+          Add Unit
+        </Button>
+      </div>
 
-const App: React.FC = () => {
-  const [form] = Form.useForm();
-  const [data, setData] = useState<DataType[]>(originData);
-  const [editingKey, setEditingKey] = useState("");
-
-  const isEditing = (record: DataType) => record.key === editingKey;
-
-  const edit = (record: Partial<DataType> & { key: React.Key }) => {
-    form.setFieldsValue({ name: "", age: "", address: "", ...record });
-    setEditingKey(record.key);
-  };
-
-  const cancel = () => {
-    setEditingKey("");
-  };
-
-  const save = async (key: React.Key) => {
-    try {
-      const row = (await form.validateFields()) as DataType;
-
-      const newData = [...data];
-      const index = newData.findIndex((item) => key === item.key);
-      if (index > -1) {
-        const item = newData[index];
-        newData.splice(index, 1, {
-          ...item,
-          ...row,
-        });
-        setData(newData);
-        setEditingKey("");
-      } else {
-        newData.push(row);
-        setData(newData);
-        setEditingKey("");
-      }
-    } catch (errInfo) {
-      console.log("Validate Failed:", errInfo);
-    }
-  };
-
-  const columns = [
-    {
-      title: "name",
-      dataIndex: "name",
-      width: "25%",
-      editable: true,
-    },
-    {
-      title: "age",
-      dataIndex: "age",
-      width: "15%",
-      editable: true,
-    },
-    {
-      title: "address",
-      dataIndex: "address",
-      width: "40%",
-      editable: true,
-    },
-    {
-      title: "operation",
-      dataIndex: "operation",
-      render: (_: any, record: DataType) => {
-        const editable = isEditing(record);
-        return editable ? (
-          <span>
-            <Typography.Link
-              onClick={() => save(record.key)}
-              style={{ marginInlineEnd: 8 }}
-            >
-              Save
-            </Typography.Link>
-            <Popconfirm title="Sure to cancel?" onConfirm={cancel}>
-              <a>Cancel</a>
-            </Popconfirm>
-          </span>
-        ) : (
-          <Typography.Link
-            disabled={editingKey !== ""}
-            onClick={() => edit(record)}
-          >
-            Edit
-          </Typography.Link>
-        );
-      },
-    },
-  ];
-
-  const mergedColumns: TableProps<DataType>["columns"] = columns.map((col) => {
-    if (!col.editable) {
-      return col;
-    }
-    return {
-      ...col,
-      onCell: (record: DataType) => ({
-        record,
-        inputType: col.dataIndex === "age" ? "number" : "text",
-        dataIndex: col.dataIndex,
-        title: col.title,
-        editing: isEditing(record),
-      }),
-    };
-  });
-
-  return (
-    <Form form={form} component={false}>
-      <Table<DataType>
-        components={{
-          body: { cell: EditableCell },
-        }}
+      {/* Empty Table */}
+      <Table<UnitData>
         bordered
-        dataSource={data}
-        columns={mergedColumns}
-        rowClassName="editable-row"
-        pagination={{ onChange: cancel }}
+        className={styles.customTable}
+        columns={columns}
+        dataSource={[]}   // 👈 NO DATA
+        scroll={{ x: "max-content" }}
+        pagination={false}
       />
-    </Form>
+
+      {/* Add Unit Modal */}
+      <Modal
+        title="Add Unit"
+        open={openAddModal}
+        onCancel={() => setOpenAddModal(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          layout="vertical"
+          form={addForm}
+          onFinish={(values) => {
+            console.log("Add Unit:", values);
+            setOpenAddModal(false);
+            addForm.resetFields();
+          }}
+        >
+          <Form.Item
+            label="Unit Name"
+            name="name"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="Eg: Kilogram" />
+          </Form.Item>
+
+          <Form.Item
+            label="Short Name"
+            name="shortName"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="Eg: kg" />
+          </Form.Item>
+
+          <Form.Item
+            label="Shop"
+            name="shop"
+            rules={[{ required: true }]}
+          >
+            <Select placeholder="Select shop">
+              <Option value="shop1">Main Shop</Option>
+              <Option value="shop2">Branch Shop</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Active"
+            name="isActive"
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Switch />
+          </Form.Item>
+
+          <Button type="primary" htmlType="submit" className="w-full">
+            Save
+          </Button>
+        </Form>
+      </Modal>
+
+      {/* Edit Unit Modal */}
+      <Modal
+        title="Edit Unit"
+        open={openEditModal}
+        onCancel={() => setOpenEditModal(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          layout="vertical"
+          form={editForm}
+          onFinish={(values) => {
+            console.log("Edit Unit:", values);
+            setOpenEditModal(false);
+          }}
+        >
+          <Form.Item
+            label="Unit Name"
+            name="name"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Short Name"
+            name="shortName"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Shop"
+            name="shop"
+            rules={[{ required: true }]}
+          >
+            <Select>
+              <Option value="shop1">Main Shop</Option>
+              <Option value="shop2">Branch Shop</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Active"
+            name="isActive"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Button type="primary" htmlType="submit" className="w-full">
+            Update
+          </Button>
+        </Form>
+      </Modal>
+    </div>
   );
 };
 
-export default App;
+export default Units;
