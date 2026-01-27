@@ -12,40 +12,42 @@ import {
 
 const { Option } = Select;
 
-interface CategoryFormValues {
+interface SubCategoryFormValues {
   name: string;
+  category: string;
   shop: string;
   description?: string;
   isActive: boolean;
 }
 
-const Categories: React.FC = () => {
+const SubCategories: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(false);
-  const [form] = Form.useForm<CategoryFormValues>();
+  const [isEdit, setIsEdit] = useState(false);
+  const [form] = Form.useForm<SubCategoryFormValues>();
 
   const openAddModal = () => {
-    setEditingCategory(false);
+    setIsEdit(false);
     form.resetFields();
     setModalVisible(true);
   };
 
   const openEditModal = () => {
-    setEditingCategory(true);
+    setIsEdit(true);
     setModalVisible(true);
   };
 
-  const handleSubmit = (values: CategoryFormValues) => {
-    console.log(editingCategory ? "UPDATE CATEGORY:" : "ADD CATEGORY:", values);
+  const handleSubmit = (values: SubCategoryFormValues) => {
+    console.log(isEdit ? "UPDATE SUBCATEGORY:" : "ADD SUBCATEGORY:", values);
     setModalVisible(false);
   };
 
-  const handleDelete = (key: string) => {
-    console.log("DELETE CATEGORY:", key);
+  const handleDelete = () => {
+    console.log("DELETE SUBCATEGORY");
   };
 
   const columns = [
-    { title: "Category Name", dataIndex: "name" },
+    { title: "SubCategory Name", dataIndex: "name" },
+    { title: "Category", dataIndex: "category" },
     { title: "Shop", dataIndex: "shop" },
     { title: "Description", dataIndex: "description" },
     {
@@ -61,8 +63,8 @@ const Categories: React.FC = () => {
             Edit
           </Button>
           <Popconfirm
-            title="Are you sure to delete this category?"
-            onConfirm={() => handleDelete("demo-key")}
+            title="Are you sure to delete this subcategory?"
+            onConfirm={handleDelete}
           >
             <Button type="link" danger>
               Delete
@@ -80,18 +82,18 @@ const Categories: React.FC = () => {
         style={{ marginBottom: 16 }}
         onClick={openAddModal}
       >
-        Add Category
+        Add SubCategory
       </Button>
 
-      {/* Design only table */}
+      {/* Design only */}
       <Table columns={columns} dataSource={[]} />
 
       <Modal
-        title={editingCategory ? "Edit Category" : "Add Category"}
+        title={isEdit ? "Edit SubCategory" : "Add SubCategory"}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
-        okText={editingCategory ? "Update" : "Add"}
+        okText={isEdit ? "Update" : "Add"}
       >
         <Form
           form={form}
@@ -101,10 +103,20 @@ const Categories: React.FC = () => {
         >
           <Form.Item
             name="name"
-            label="Category Name"
+            label="SubCategory Name"
             rules={[{ required: true }]}
           >
             <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
+            <Select placeholder="Select Category">
+              {/* options will come from API later */}
+            </Select>
           </Form.Item>
 
           <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
@@ -127,4 +139,4 @@ const Categories: React.FC = () => {
   );
 };
 
-export default Categories;
+export default SubCategories;

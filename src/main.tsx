@@ -35,6 +35,7 @@ import Roles from './Pages/Roles';
 
 import 'antd/dist/reset.css';
 import { ConfigProvider } from 'antd';
+import "antd/dist/reset.css";
 
 
 
