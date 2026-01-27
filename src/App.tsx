@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Layout, Menu, Button, theme } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import logo from './assets/Screenshot__54_-removebg-preview.png';
+import logo from './assets/WhatsApp_Image_2026-01-27_at_10.45.23_AM-removebg-preview.png';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
