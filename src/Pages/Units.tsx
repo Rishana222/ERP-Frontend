@@ -1,6 +1,14 @@
 import React, { useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, Switch } from "antd";
-import type { TableColumnsType } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Switch,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { createStyles } from "antd-style";
 
 const { Option } = Select;
@@ -19,77 +27,91 @@ const useStyle = createStyles(({ css }) => ({
 
 /* ---------- Types ---------- */
 interface UnitData {
-  key: React.Key;
+  key: string;
   name: string;
   shortName: string;
   shop: string;
   isActive: boolean;
 }
 
-/* ---------- Columns ---------- */
-const columns: TableColumnsType<UnitData> = [
-  {
-    title: "Unit Name",
-    dataIndex: "name",
-    width: 200,
-    fixed: "start",
-  },
-  {
-    title: "Short Name",
-    dataIndex: "shortName",
-    width: 150,
-  },
-  {
-    title: "Shop",
-    dataIndex: "shop",
-    width: 200,
-  },
-  {
-    title: "Active",
-    dataIndex: "isActive",
-    width: 100,
-    render: (val: boolean) => (val ? "Yes" : "No"),
-  },
-  {
-    title: "Action",
-    fixed: "end",
-    width: 150,
-    render: () => (
-      <div className="flex gap-2">
-        <a>Edit</a>
-        <a style={{ color: "red" }}>Delete</a>
-      </div>
-    ),
-  },
-];
-
 const Units: React.FC = () => {
   const { styles } = useStyle();
 
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
+  const [editingUnit, setEditingUnit] = useState<UnitData | null>(null);
 
-  const [addForm] = Form.useForm();
-  const [editForm] = Form.useForm();
+  const [addForm] = Form.useForm<UnitData>();
+  const [editForm] = Form.useForm<UnitData>();
+
+  /* ---------- Columns ---------- */
+  const columns: ColumnsType<UnitData> = [
+    {
+      title: "Unit Name",
+      dataIndex: "name",
+      width: 200,
+      fixed: "start",
+    },
+    {
+      title: "Short Name",
+      dataIndex: "shortName",
+      width: 150,
+    },
+    {
+      title: "Shop",
+      dataIndex: "shop",
+      width: 200,
+    },
+    {
+      title: "Active",
+      dataIndex: "isActive",
+      width: 100,
+      render: (val: boolean) => (val ? "Yes" : "No"),
+    },
+    {
+      title: "Action",
+      fixed: "end",
+      width: 150,
+      render: (_, record) => (
+        <div className="flex gap-2">
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => {
+              setEditingUnit(record);
+              editForm.setFieldsValue(record);
+              setOpenEditModal(true);
+            }}
+          >
+            Edit
+          </Button>
+          <Button size="small" danger>
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center  ">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Units Master</h2>
         <Button type="primary" onClick={() => setOpenAddModal(true)}>
           Add Unit
         </Button>
       </div>
 
-      {/* Empty Table */}
+      {/* Table */}
       <Table<UnitData>
         bordered
         className={styles.customTable}
         columns={columns}
-        dataSource={[]}   // 👈 NO DATA
+        dataSource={[]} // design only
         scroll={{ x: "max-content" }}
         pagination={false}
+        style={{ marginTop: 16 }}
       />
 
       {/* Add Unit Modal */}
@@ -103,8 +125,9 @@ const Units: React.FC = () => {
         <Form
           layout="vertical"
           form={addForm}
+          initialValues={{ isActive: true }}
           onFinish={(values) => {
-            console.log("Add Unit:", values);
+            console.log("ADD UNIT:", values);
             setOpenAddModal(false);
             addForm.resetFields();
           }}
@@ -131,8 +154,8 @@ const Units: React.FC = () => {
             rules={[{ required: true }]}
           >
             <Select placeholder="Select shop">
-              <Option value="shop1">Main Shop</Option>
-              <Option value="shop2">Branch Shop</Option>
+              <Option value="Main Shop">Main Shop</Option>
+              <Option value="Branch Shop">Branch Shop</Option>
             </Select>
           </Form.Item>
 
@@ -140,7 +163,6 @@ const Units: React.FC = () => {
             label="Active"
             name="isActive"
             valuePropName="checked"
-            initialValue={true}
           >
             <Switch />
           </Form.Item>
@@ -155,7 +177,10 @@ const Units: React.FC = () => {
       <Modal
         title="Edit Unit"
         open={openEditModal}
-        onCancel={() => setOpenEditModal(false)}
+        onCancel={() => {
+          setOpenEditModal(false);
+          setEditingUnit(null);
+        }}
         footer={null}
         destroyOnClose
       >
@@ -163,7 +188,10 @@ const Units: React.FC = () => {
           layout="vertical"
           form={editForm}
           onFinish={(values) => {
-            console.log("Edit Unit:", values);
+            console.log("UPDATE UNIT:", {
+              ...editingUnit,
+              ...values,
+            });
             setOpenEditModal(false);
           }}
         >
@@ -189,8 +217,8 @@ const Units: React.FC = () => {
             rules={[{ required: true }]}
           >
             <Select>
-              <Option value="shop1">Main Shop</Option>
-              <Option value="shop2">Branch Shop</Option>
+              <Option value="Main Shop">Main Shop</Option>
+              <Option value="Branch Shop">Branch Shop</Option>
             </Select>
           </Form.Item>
 
