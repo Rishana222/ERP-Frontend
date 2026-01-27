@@ -61,15 +61,15 @@ const router = createBrowserRouter([
       },
       {
         path: '/sub-categories',
-        element: <SubCategory />, // ✅ ADDED
+        element: <SubCategory />, 
       },
        {
         path: '/units',
-        element: <Units />,      // ✅ ADDED
+        element: <Units />,      
       },
       {
         path: '/taxes',
-        element: <Tax />,        // ✅ ADDED
+        element: <Tax />,        
       },
       {
         path: '/customers',
@@ -85,7 +85,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/variants',
-        element: <Variant />,    // ✅ ADDED
+        element: <Variant />,   
       },
 
       // Sales
@@ -163,20 +163,20 @@ createRoot(document.getElementById('root')!).render(
     <ConfigProvider
   theme={{
     token: {
-      colorPrimary: '#b3b3cc', // `#29293d`-nte kurachoode light aaya version (Buttons-inu)
+      colorPrimary: '#b3b3cc', 
       colorBgContainer: '#ffffff', 
-      borderRadius: 10, // Kurachoode modern aakkan vendi rounding kootti
+      borderRadius: 10,
       fontFamily: "'Inter', sans-serif",
     },
     components: {
       Layout: {
-        siderBg: '#29293d', // Sider-nu nee paranja aa exact Deep Slate color
+        siderBg: '#29293d', 
         headerBg: '#ffffff', 
-        bodyBg: '#f0f0f5',   // Background-nu oru light slate tint (Grey-ish blue)
+        bodyBg: '#f0f0f5',   
       },
       Menu: {
         darkItemBg: '#29293d',
-        darkItemSelectedBg: '#4d4d70', // Selected portion
+        darkItemSelectedBg: '#4d4d70', 
         darkItemSelectedColor: '#ffffff',
       },
     },

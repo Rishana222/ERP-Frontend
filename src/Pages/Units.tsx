@@ -17,7 +17,7 @@ const useStyle = createStyles(({ css }) => ({
   `,
 }));
 
-/* ---------- Types ---------- */
+
 interface UnitData {
   key: React.Key;
   name: string;
@@ -26,7 +26,7 @@ interface UnitData {
   isActive: boolean;
 }
 
-/* ---------- Columns ---------- */
+
 const columns: TableColumnsType<UnitData> = [
   {
     title: "Unit Name",
@@ -74,25 +74,28 @@ const Units: React.FC = () => {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex justify-between items-center  ">
+
+      <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Units Master</h2>
-        <Button type="primary" onClick={() => setOpenAddModal(true)}>
-          Add Unit
-        </Button>
+
+        <div style={{ marginBottom: 16 }}>
+          <Button type="primary" onClick={() => setOpenAddModal(true)}>
+            Add Unit
+          </Button>
+        </div>
       </div>
 
-      {/* Empty Table */}
+
       <Table<UnitData>
         bordered
         className={styles.customTable}
         columns={columns}
-        dataSource={[]}   // 👈 NO DATA
+        dataSource={[]}
         scroll={{ x: "max-content" }}
         pagination={false}
       />
 
-      {/* Add Unit Modal */}
+
       <Modal
         title="Add Unit"
         open={openAddModal}
@@ -151,7 +154,6 @@ const Units: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Edit Unit Modal */}
       <Modal
         title="Edit Unit"
         open={openEditModal}
