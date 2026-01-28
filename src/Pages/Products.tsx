@@ -1,18 +1,7 @@
-import {
-  Button,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Switch,
-  Table,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Button,Form,Input,InputNumber,Modal,Select,Switch,Table,} from "antd";
+ import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
-
-const { Option } = Select;
-
+ const { Option } = Select; 
 interface Product {
   key: string;
   name: string;
@@ -26,8 +15,7 @@ interface Product {
   taxPercent?: number;
   stock?: number;
   isActive: boolean;
-}
-
+}  
 const Products: React.FC = () => {
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openUpdateModal, setOpenUpdateModal] = useState(false);
