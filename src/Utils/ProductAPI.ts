@@ -52,7 +52,7 @@ export const deleteProduct = (id: string) => {
     .then((res) => res.data);
 };
 
-/* ================= PRODUCT HOOKS ================= */
+
 
 export const useCreateProduct = () =>
   useMutation({
