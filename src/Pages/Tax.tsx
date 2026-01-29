@@ -1,44 +1,71 @@
 import React, { useState } from "react";
-import { Table, Button, Modal, Form, Input, InputNumber, Select, Switch } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Switch,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { createStyles } from "antd-style";
 
 const { Option } = Select;
 
+/* ---------- Styles ---------- */
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #eaeaea transparent;
+      }
+    }
+  `,
+}));
+
 /* ---------- Types ---------- */
-interface TaxData {
+interface CustomerData {
   key: string;
   name: string;
-  rate: number;
-  type: "CGST" | "SGST" | "IGST";
+  phone?: string;
+  email?: string;
+  address?: string;
+  shop: string;
+  openingBalance: number;
+  creditLimit: number;
   isActive: boolean;
-  description?: string;
 }
 
-const Tax: React.FC = () => {
+/* ---------- Component ---------- */
+const Customers: React.FC = () => {
+  const { styles } = useStyle();
+
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
-  const [editingTax, setEditingTax] = useState<TaxData | null>(null);
+  const [editingCustomer, setEditingCustomer] =
+    useState<CustomerData | null>(null);
 
-  const [addForm] = Form.useForm<TaxData>();
-  const [editForm] = Form.useForm<TaxData>();
+  const [addForm] = Form.useForm<CustomerData>();
+  const [editForm] = Form.useForm<CustomerData>();
 
   /* ---------- Columns ---------- */
-  const columns: ColumnsType<TaxData> = [
-    { title: "Tax Name", dataIndex: "name", width: 200 },
-    {
-      title: "Rate (%)",
-      dataIndex: "rate",
-      width: 120,
-      render: (rate: number) => `${rate}%`,
-    },
-    { title: "Type", dataIndex: "type", width: 120 },
+  const columns: ColumnsType<CustomerData> = [
+    { title: "Customer Name", dataIndex: "name", width: 200 },
+    { title: "Phone", dataIndex: "phone", width: 150 },
+    { title: "Email", dataIndex: "email", width: 200 },
+    { title: "Shop", dataIndex: "shop", width: 150 },
+    { title: "Opening Balance", dataIndex: "openingBalance", width: 150 },
+    { title: "Credit Limit", dataIndex: "creditLimit", width: 150 },
     {
       title: "Active",
       dataIndex: "isActive",
       width: 100,
       render: (val: boolean) => (val ? "Yes" : "No"),
     },
-    { title: "Description", dataIndex: "description" },
     {
       title: "Action",
       width: 150,
@@ -48,7 +75,7 @@ const Tax: React.FC = () => {
             size="small"
             type="primary"
             onClick={() => {
-              setEditingTax(record);
+              setEditingCustomer(record);
               editForm.setFieldsValue(record);
               setOpenEditModal(true);
             }}
@@ -67,25 +94,26 @@ const Tax: React.FC = () => {
     <div>
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Tax Master</h2>
+        <h2 className="text-xl font-semibold">Customers</h2>
         <Button type="primary" onClick={() => setOpenAddModal(true)}>
-          Add Tax
+          Add Customer
         </Button>
       </div>
 
       {/* Table */}
-      <Table<TaxData>
+      <Table<CustomerData>
         bordered
+        className={styles.customTable}
         columns={columns}
-        dataSource={[]} // API later
+        dataSource={[]}
         pagination={false}
         scroll={{ x: "max-content" }}
         style={{ marginTop: 16 }}
       />
 
-      {/* Add Tax Modal */}
+      {/* Add Customer Modal */}
       <Modal
-        title="Add Tax"
+        title="Add Customer"
         open={openAddModal}
         onCancel={() => setOpenAddModal(false)}
         footer={null}
@@ -96,29 +124,40 @@ const Tax: React.FC = () => {
           form={addForm}
           initialValues={{ isActive: true }}
           onFinish={(values) => {
-            console.log("ADD TAX:", values);
+            console.log("ADD CUSTOMER:", values);
             setOpenAddModal(false);
             addForm.resetFields();
           }}
         >
-          <Form.Item name="name" label="Tax Name" rules={[{ required: true }]}>
-            <Input placeholder="Eg: GST 18%" />
+          <Form.Item name="name" label="Customer Name" rules={[{ required: true }]}>
+            <Input />
           </Form.Item>
 
-          <Form.Item name="rate" label="Tax Rate (%)" rules={[{ required: true }]}>
-            <InputNumber min={0} max={100} style={{ width: "100%" }} />
+          <Form.Item name="phone" label="Phone">
+            <Input />
           </Form.Item>
 
-          <Form.Item name="type" label="Tax Type" rules={[{ required: true }]}>
-            <Select placeholder="Select Tax Type">
-              <Option value="CGST">CGST</Option>
-              <Option value="SGST">SGST</Option>
-              <Option value="IGST">IGST</Option>
+          <Form.Item name="email" label="Email">
+            <Input type="email" />
+          </Form.Item>
+
+          <Form.Item name="address" label="Address">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+
+          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
+            <Select placeholder="Select shop">
+              <Option value="Main Shop">Main Shop</Option>
+              <Option value="Branch Shop">Branch Shop</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} />
+          <Form.Item name="openingBalance" label="Opening Balance">
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item name="creditLimit" label="Credit Limit">
+            <InputNumber style={{ width: "100%" }} />
           </Form.Item>
 
           <Form.Item name="isActive" label="Active" valuePropName="checked">
@@ -131,13 +170,13 @@ const Tax: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Edit Tax Modal */}
+      {/* Edit Customer Modal */}
       <Modal
-        title="Edit Tax"
+        title="Edit Customer"
         open={openEditModal}
         onCancel={() => {
           setOpenEditModal(false);
-          setEditingTax(null);
+          setEditingCustomer(null);
         }}
         footer={null}
         destroyOnClose
@@ -146,31 +185,42 @@ const Tax: React.FC = () => {
           layout="vertical"
           form={editForm}
           onFinish={(values) => {
-            console.log("UPDATE TAX:", {
-              ...editingTax,
+            console.log("UPDATE CUSTOMER:", {
+              ...editingCustomer,
               ...values,
             });
             setOpenEditModal(false);
           }}
         >
-          <Form.Item name="name" label="Tax Name" rules={[{ required: true }]}>
+          <Form.Item name="name" label="Customer Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
 
-          <Form.Item name="rate" label="Tax Rate (%)" rules={[{ required: true }]}>
-            <InputNumber min={0} max={100} style={{ width: "100%" }} />
+          <Form.Item name="phone" label="Phone">
+            <Input />
           </Form.Item>
 
-          <Form.Item name="type" label="Tax Type" rules={[{ required: true }]}>
+          <Form.Item name="email" label="Email">
+            <Input type="email" />
+          </Form.Item>
+
+          <Form.Item name="address" label="Address">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+
+          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
             <Select>
-              <Option value="CGST">CGST</Option>
-              <Option value="SGST">SGST</Option>
-              <Option value="IGST">IGST</Option>
+              <Option value="Main Shop">Main Shop</Option>
+              <Option value="Branch Shop">Branch Shop</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} />
+          <Form.Item name="openingBalance" label="Opening Balance">
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item name="creditLimit" label="Credit Limit">
+            <InputNumber style={{ width: "100%" }} />
           </Form.Item>
 
           <Form.Item name="isActive" label="Active" valuePropName="checked">
@@ -186,4 +236,4 @@ const Tax: React.FC = () => {
   );
 };
 
-export default Tax;
+export default Customers;

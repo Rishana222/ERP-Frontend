@@ -10,8 +10,22 @@ import {
   Switch,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { createStyles } from "antd-style";
 
 const { Option } = Select;
+
+/* -------------------- Styles -------------------- */
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #eaeaea transparent;
+      }
+    }
+  `,
+}));
 
 /* ---------- Types ---------- */
 interface VendorData {
@@ -27,10 +41,11 @@ interface VendorData {
 }
 
 const Vendors: React.FC = () => {
+  const { styles } = useStyle();
+
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
-  const [editingVendor, setEditingVendor] =
-    useState<VendorData | null>(null);
+  const [editingVendor, setEditingVendor] = useState<VendorData | null>(null);
 
   const [addForm] = Form.useForm<VendorData>();
   const [editForm] = Form.useForm<VendorData>();
@@ -42,11 +57,7 @@ const Vendors: React.FC = () => {
     { title: "Email", dataIndex: "email", width: 200 },
     { title: "GST No", dataIndex: "gstNumber", width: 180 },
     { title: "Shop", dataIndex: "shop", width: 150 },
-    {
-      title: "Opening Balance",
-      dataIndex: "openingBalance",
-      width: 150,
-    },
+    { title: "Opening Balance", dataIndex: "openingBalance", width: 150 },
     {
       title: "Active",
       dataIndex: "isActive",
@@ -88,14 +99,17 @@ const Vendors: React.FC = () => {
       </div>
 
       {/* Table */}
-      <Table<VendorData>
-        bordered
-        columns={columns}
-        dataSource={[]} // API later
-        pagination={false}
-        scroll={{ x: "max-content" }}
-        style={{ marginTop: 16 }}
-      />
+      <div className={styles.customTable}>
+        <Table<VendorData>
+          bordered
+          columns={columns}
+          dataSource={[]} // design only
+          rowKey="key"
+          pagination={false}
+          scroll={{ x: "max-content" }}
+          style={{ marginTop: 16 }}
+        />
+      </div>
 
       {/* Add Vendor Modal */}
       <Modal
@@ -108,7 +122,7 @@ const Vendors: React.FC = () => {
         <Form
           layout="vertical"
           form={addForm}
-          initialValues={{ isActive: true }}
+          initialValues={{ isActive: true, openingBalance: 0 }}
           onFinish={(values) => {
             console.log("ADD VENDOR:", values);
             setOpenAddModal(false);
@@ -137,14 +151,13 @@ const Vendors: React.FC = () => {
 
           <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
             <Select placeholder="Select shop">
-              {/* API later */}
               <Option value="Main Shop">Main Shop</Option>
               <Option value="Branch Shop">Branch Shop</Option>
             </Select>
           </Form.Item>
 
           <Form.Item name="openingBalance" label="Opening Balance">
-            <InputNumber style={{ width: "100%" }} />
+            <InputNumber style={{ width: "100%" }} min={0} />
           </Form.Item>
 
           <Form.Item name="isActive" label="Active" valuePropName="checked">
@@ -172,10 +185,7 @@ const Vendors: React.FC = () => {
           layout="vertical"
           form={editForm}
           onFinish={(values) => {
-            console.log("UPDATE VENDOR:", {
-              ...editingVendor,
-              ...values,
-            });
+            console.log("UPDATE VENDOR:", { ...editingVendor, ...values });
             setOpenEditModal(false);
           }}
         >
@@ -207,7 +217,7 @@ const Vendors: React.FC = () => {
           </Form.Item>
 
           <Form.Item name="openingBalance" label="Opening Balance">
-            <InputNumber style={{ width: "100%" }} />
+            <InputNumber style={{ width: "100%" }} min={0} />
           </Form.Item>
 
           <Form.Item name="isActive" label="Active" valuePropName="checked">

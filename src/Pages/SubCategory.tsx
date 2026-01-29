@@ -9,8 +9,22 @@ import {
   Select,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { createStyles } from "antd-style";
 
 const { Option } = Select;
+
+/* -------------------- Styles -------------------- */
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #eaeaea transparent;
+      }
+    }
+  `,
+}));
 
 /* ---------- Types ---------- */
 interface SubCategoryData {
@@ -23,6 +37,8 @@ interface SubCategoryData {
 }
 
 const SubCategories: React.FC = () => {
+  const { styles } = useStyle();
+
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editingSubCategory, setEditingSubCategory] =
@@ -78,14 +94,17 @@ const SubCategories: React.FC = () => {
       </div>
 
       {/* Table */}
-      <Table<SubCategoryData>
-        bordered
-        columns={columns}
-        dataSource={[]} // design only
-        pagination={false}
-        scroll={{ x: "max-content" }}
-        style={{ marginTop: 16 }}
-      />
+      <div className={styles.customTable}>
+        <Table<SubCategoryData>
+          bordered
+          columns={columns}
+          dataSource={[]} // design only
+          rowKey="key"
+          pagination={false}
+          scroll={{ x: "max-content" }}
+          style={{ marginTop: 16 }}
+        />
+      </div>
 
       {/* Add SubCategory Modal */}
       <Modal
@@ -113,21 +132,20 @@ const SubCategories: React.FC = () => {
             <Input />
           </Form.Item>
 
-         <Form.Item
-  name="category"
-  label="Category"
-  rules={[{ required: true }]}
->
-  <Select
-    placeholder="Select category"
-    allowClear
-    showSearch
-    optionFilterProp="label"
-  >
-    {/* categories from API */}
-  </Select>
-</Form.Item>
-
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
+            <Select
+              placeholder="Select category"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+            >
+              {/* categories from API */}
+            </Select>
+          </Form.Item>
 
           <Form.Item
             label="Shop"
@@ -188,21 +206,20 @@ const SubCategories: React.FC = () => {
             <Input />
           </Form.Item>
 
-        <Form.Item
-  name="category"
-  label="Category"
-  rules={[{ required: true }]}
->
-  <Select
-    placeholder="Select category"
-    allowClear
-    showSearch
-    optionFilterProp="label"
-  >
-    {/* categories from API */}
-  </Select>
-</Form.Item>
-
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
+            <Select
+              placeholder="Select category"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+            >
+              {/* categories from API */}
+            </Select>
+          </Form.Item>
 
           <Form.Item
             label="Shop"

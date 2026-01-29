@@ -10,8 +10,22 @@ import {
   Switch,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { createStyles } from "antd-style";
 
 const { Option } = Select;
+
+/* ---------- Styles ---------- */
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #eaeaea transparent;
+      }
+    }
+  `,
+}));
 
 /* ---------- Types ---------- */
 interface CustomerData {
@@ -26,7 +40,10 @@ interface CustomerData {
   isActive: boolean;
 }
 
+/* ---------- Component ---------- */
 const Customers: React.FC = () => {
+  const { styles } = useStyle();
+
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editingCustomer, setEditingCustomer] =
@@ -41,16 +58,8 @@ const Customers: React.FC = () => {
     { title: "Phone", dataIndex: "phone", width: 150 },
     { title: "Email", dataIndex: "email", width: 200 },
     { title: "Shop", dataIndex: "shop", width: 150 },
-    {
-      title: "Opening Balance",
-      dataIndex: "openingBalance",
-      width: 150,
-    },
-    {
-      title: "Credit Limit",
-      dataIndex: "creditLimit",
-      width: 150,
-    },
+    { title: "Opening Balance", dataIndex: "openingBalance", width: 150 },
+    { title: "Credit Limit", dataIndex: "creditLimit", width: 150 },
     {
       title: "Active",
       dataIndex: "isActive",
@@ -94,8 +103,9 @@ const Customers: React.FC = () => {
       {/* Table */}
       <Table<CustomerData>
         bordered
+        className={styles.customTable}
         columns={columns}
-        dataSource={[]} // API later
+        dataSource={[]}
         pagination={false}
         scroll={{ x: "max-content" }}
         style={{ marginTop: 16 }}
@@ -137,7 +147,6 @@ const Customers: React.FC = () => {
 
           <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
             <Select placeholder="Select shop">
-              {/* API later */}
               <Option value="Main Shop">Main Shop</Option>
               <Option value="Branch Shop">Branch Shop</Option>
             </Select>

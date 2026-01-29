@@ -1,10 +1,22 @@
 import React, { useState } from "react";
 import { Table, Button, Modal, Form, Input, Select, Switch } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import type { TableColumnsType } from "antd";
+import { createStyles } from "antd-style";
 
 const { Option } = Select;
 
-/* ---------- Types ---------- */
+
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+      }
+    }
+  `,
+}));
+
 interface ShopData {
   key: string;
   name: string;
@@ -16,8 +28,8 @@ interface ShopData {
   isActive: boolean;
 }
 
-/* ---------- Columns ---------- */
-const columns: ColumnsType<ShopData> = [
+
+const columns: TableColumnsType<ShopData> = [
   {
     title: "Shop Name",
     dataIndex: "name",
@@ -62,6 +74,8 @@ const columns: ColumnsType<ShopData> = [
 ];
 
 const Shop: React.FC = () => {
+  const { styles } = useStyle();
+
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
 
@@ -81,8 +95,10 @@ const Shop: React.FC = () => {
       {/* Table */}
       <Table<ShopData>
         bordered
+        className={styles.customTable}
         columns={columns}
-        dataSource={[]} // API later
+        dataSource={[]} 
+        rowKey="key"
         pagination={false}
         scroll={{ x: "max-content" }}
         style={{ marginTop: 16 }}
@@ -112,7 +128,6 @@ const Shop: React.FC = () => {
 
           <Form.Item label="Owner" name="owner" rules={[{ required: true }]}>
             <Select placeholder="Select Owner">
-              {/* API later */}
               <Option value="user1">User 1</Option>
               <Option value="user2">User 2</Option>
             </Select>

@@ -8,11 +8,25 @@ import {
   Switch,
   Table,
 } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import type { TableColumnsType } from "antd";
 import { useState } from "react";
+import { createStyles } from "antd-style";
 
 const { Option } = Select;
 
+/* -------------------- Styles -------------------- */
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+      }
+    }
+  `,
+}));
+
+/* -------------------- Types -------------------- */
 interface Product {
   key: string;
   name: string;
@@ -28,7 +42,11 @@ interface Product {
   isActive: boolean;
 }
 
+/* -------------------- Component -------------------- */
 const Products: React.FC = () => {
+  const { styles } = useStyle();
+
+  const [products, setProducts] = useState<Product[]>([]);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openUpdateModal, setOpenUpdateModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -36,7 +54,8 @@ const Products: React.FC = () => {
   const [form] = Form.useForm<Product>();
   const [updateForm] = Form.useForm<Product>();
 
-  const columns: ColumnsType<Product> = [
+  /* -------------------- Columns -------------------- */
+  const columns: TableColumnsType<Product> = [
     { title: "Name", dataIndex: "name", width: 150 },
     { title: "SKU", dataIndex: "sku", width: 120 },
     { title: "Shop", dataIndex: "shop", width: 150 },
@@ -51,16 +70,25 @@ const Products: React.FC = () => {
       title: "Active",
       dataIndex: "isActive",
       width: 100,
-      render: (val: boolean) => (val ? "Yes" : "No"),
+      render: (val) => (val ? "Yes" : "No"),
     },
     {
       title: "Action",
       width: 150,
       render: (_, record) => (
         <div className="flex gap-2">
-          <Button danger size="small">
+          <Button
+            danger
+            size="small"
+            onClick={() =>
+              setProducts((prev) =>
+                prev.filter((item) => item.key !== record.key)
+              )
+            }
+          >
             Delete
           </Button>
+
           <Button
             size="small"
             type="primary"
@@ -87,17 +115,19 @@ const Products: React.FC = () => {
         </Button>
       </div>
 
-      {/* Table (with gap) */}
+      {/* Table */}
       <Table<Product>
         bordered
+        className={styles.customTable}
         columns={columns}
-        dataSource={[]}
+        dataSource={products}
+        rowKey="key"
         pagination={false}
         scroll={{ x: "max-content" }}
-        style={{ marginTop: 16 }} // 👈 GAP HERE
+        style={{ marginTop: 16 }}
       />
 
-      {/* Add Product Modal */}
+      {/* -------------------- Add Product Modal -------------------- */}
       <Modal
         title="Add Product"
         open={openCreateModal}
@@ -110,16 +140,15 @@ const Products: React.FC = () => {
           form={form}
           initialValues={{ isActive: true }}
           onFinish={(values) => {
-            console.log("Create product:", values);
+            setProducts((prev) => [
+              ...prev,
+              { ...values, key: Date.now().toString() },
+            ]);
             setOpenCreateModal(false);
             form.resetFields();
           }}
         >
-          <Form.Item
-            name="name"
-            label="Product Name"
-            rules={[{ required: true }]}
-          >
+          <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
 
@@ -128,39 +157,14 @@ const Products: React.FC = () => {
           </Form.Item>
 
           <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select placeholder="Select shop">
+            <Select>
               <Option value="Main Shop">Main Shop</Option>
               <Option value="Branch Shop">Branch Shop</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item
-            name="category"
-            label="Category"
-            rules={[{ required: true }]}
-          >
-            <Select
-              placeholder="Select category"
-              allowClear
-              showSearch
-              optionFilterProp="label"
-            >
-              {/* Categories will come from API */}
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="category"
-            label="Category"
-            rules={[{ required: true }]}
-          >
-            <Select
-              placeholder="Select category"
-              allowClear
-              showSearch
-              optionFilterProp="label"
-            >
-              {/* Categories will come from API */}
-            </Select>
+          <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+            <Input />
           </Form.Item>
 
           <Form.Item name="subCategory" label="Sub Category">
@@ -174,19 +178,11 @@ const Products: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item
-            name="purchasePrice"
-            label="Purchase Price"
-            rules={[{ required: true }]}
-          >
+          <Form.Item name="purchasePrice" label="Purchase Price">
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item
-            name="sellingPrice"
-            label="Selling Price"
-            rules={[{ required: true }]}
-          >
+          <Form.Item name="sellingPrice" label="Selling Price">
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
 
@@ -204,6 +200,46 @@ const Products: React.FC = () => {
 
           <Button type="primary" htmlType="submit" className="w-full">
             Save
+          </Button>
+        </Form>
+      </Modal>
+
+      {/* -------------------- Update Product Modal -------------------- */}
+      <Modal
+        title="Update Product"
+        open={openUpdateModal}
+        onCancel={() => setOpenUpdateModal(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          layout="vertical"
+          form={updateForm}
+          onFinish={(values) => {
+            setProducts((prev) =>
+              prev.map((p) =>
+                p.key === editingProduct?.key
+                  ? { ...p, ...values }
+                  : p
+              )
+            );
+            setOpenUpdateModal(false);
+          }}
+        >
+          <Form.Item name="name" label="Product Name">
+            <Input />
+          </Form.Item>
+
+          <Form.Item name="sellingPrice" label="Selling Price">
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item name="isActive" label="Active" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+
+          <Button type="primary" htmlType="submit" className="w-full">
+            Update
           </Button>
         </Form>
       </Modal>

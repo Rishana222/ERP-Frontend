@@ -10,8 +10,22 @@ import {
   InputNumber,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { createStyles } from "antd-style";
 
 const { Option } = Select;
+
+/* -------------------- Styles -------------------- */
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #eaeaea transparent;
+      }
+    }
+  `,
+}));
 
 /* ---------- Types ---------- */
 interface VariantData {
@@ -58,6 +72,8 @@ const Variants: React.FC = () => {
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
+  const { styles } = useStyle();
+
   return (
     <div>
       {/* Header */}
@@ -69,14 +85,17 @@ const Variants: React.FC = () => {
       </div>
 
       {/* Table */}
-      <Table<VariantData>
-        bordered
-        columns={columns}
-        dataSource={[]} // API later
-        pagination={false}
-        scroll={{ x: "max-content" }}
-        style={{ marginTop: 16 }}
-      />
+      <div className={styles.customTable}>
+        <Table<VariantData>
+          bordered
+          columns={columns}
+          dataSource={[]} // Replace with API later
+          rowKey="key"
+          pagination={false}
+          scroll={{ x: "max-content" }}
+          style={{ marginTop: 16 }}
+        />
+      </div>
 
       {/* Add Variant Modal */}
       <Modal
@@ -114,7 +133,6 @@ const Variants: React.FC = () => {
             rules={[{ required: true }]}
           >
             <Select placeholder="Select Product">
-              {/* API later */}
               <Option value="product1">Product 1</Option>
               <Option value="product2">Product 2</Option>
             </Select>

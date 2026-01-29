@@ -9,8 +9,22 @@ import {
   Switch,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { createStyles } from "antd-style";
 
 const { Option } = Select;
+
+/* ---------- Styles ---------- */
+const useStyle = createStyles(({ css }) => ({
+  customTable: css`
+    .ant-table {
+      .ant-table-body,
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #eaeaea transparent;
+      }
+    }
+  `,
+}));
 
 /* ---------- Types ---------- */
 interface CategoryData {
@@ -23,6 +37,8 @@ interface CategoryData {
 
 /* ---------- Component ---------- */
 const Categories: React.FC = () => {
+  const { styles } = useStyle();
+
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editingCategory, setEditingCategory] =
@@ -79,6 +95,7 @@ const Categories: React.FC = () => {
       {/* Table */}
       <Table<CategoryData>
         bordered
+        className={styles.customTable}
         columns={columns}
         dataSource={[]}
         pagination={false}
@@ -86,7 +103,7 @@ const Categories: React.FC = () => {
         style={{ marginTop: 16 }}
       />
 
-      {/* Add Category Modal */}
+      {/* Add Modal */}
       <Modal
         title="Add Category"
         open={openAddModal}
@@ -119,11 +136,7 @@ const Categories: React.FC = () => {
             <Input.TextArea rows={3} />
           </Form.Item>
 
-          <Form.Item
-            name="isActive"
-            label="Active"
-            valuePropName="checked"
-          >
+          <Form.Item name="isActive" label="Active" valuePropName="checked">
             <Switch />
           </Form.Item>
 
@@ -133,7 +146,7 @@ const Categories: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Edit Category Modal */}
+      {/* Edit Modal */}
       <Modal
         title="Edit Category"
         open={openEditModal}
@@ -170,11 +183,7 @@ const Categories: React.FC = () => {
             <Input.TextArea rows={3} />
           </Form.Item>
 
-          <Form.Item
-            name="isActive"
-            label="Active"
-            valuePropName="checked"
-          >
+          <Form.Item name="isActive" label="Active" valuePropName="checked">
             <Switch />
           </Form.Item>
 
