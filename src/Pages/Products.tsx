@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import {
   Button,
   Form,
@@ -28,12 +27,6 @@ const useStyle = createStyles(({ css }) => ({
 }));
 
 /* -------------------- Types -------------------- */
-=======
-import { Button,Form,Input,InputNumber,Modal,Select,Switch,Table,} from "antd";
- import type { ColumnsType } from "antd/es/table";
-import { useState } from "react";
- const { Option } = Select; 
->>>>>>> 9d8d001ee0ab36aa988effcf4c9dcca03a991081
 interface Product {
   key: string;
   name: string;
@@ -47,13 +40,9 @@ interface Product {
   taxPercent?: number;
   stock?: number;
   isActive: boolean;
-<<<<<<< HEAD
 }
 
 /* -------------------- Component -------------------- */
-=======
-}  
->>>>>>> 9d8d001ee0ab36aa988effcf4c9dcca03a991081
 const Products: React.FC = () => {
   const { styles } = useStyle();
 
@@ -93,7 +82,7 @@ const Products: React.FC = () => {
             size="small"
             onClick={() =>
               setProducts((prev) =>
-                prev.filter((item) => item.key !== record.key)
+                prev.filter((item) => item.key !== record.key),
               )
             }
           >
@@ -159,7 +148,11 @@ const Products: React.FC = () => {
             form.resetFields();
           }}
         >
-          <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="name"
+            label="Product Name"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
 
@@ -174,7 +167,11 @@ const Products: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
 
@@ -229,10 +226,8 @@ const Products: React.FC = () => {
           onFinish={(values) => {
             setProducts((prev) =>
               prev.map((p) =>
-                p.key === editingProduct?.key
-                  ? { ...p, ...values }
-                  : p
-              )
+                p.key === editingProduct?.key ? { ...p, ...values } : p,
+              ),
             );
             setOpenUpdateModal(false);
           }}
