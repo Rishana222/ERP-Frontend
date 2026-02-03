@@ -1,195 +1,177 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import {QueryClient,QueryClientProvider} from "@tanstack/react-query"
-import App from './App';
-import Dashboard from './Pages/Dashboard';
-import Products from './Pages/Products';
-import Categories from './Pages/Categories';
-import SubCategory from './Pages/SubCategory';
-import Tax from './Pages/Tax';
-import Units from './Pages/Units';
-import Customers from './Pages/Customers';
-import Vendors from './Pages/Vendors';
-import Shop from './Pages/Shop';
-import Variant from './Pages/Variant';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import Sales from './Pages/Sales';
-import Invoices from './Pages/Invoices';
-import SalesReturn from './Pages/SalesReturn';
-import Receipts from './Pages/Receipts';
+import App from "./App";
+import Login from "./Pages/Login";
+import Dashboard from "./Pages/Dashboard";
 
-import Purchase from './Pages/Purchase';
-import PurchaseReturn from './Pages/PurchaseReturn';
+// Masters
+import Products from "./Pages/Products";
+import Categories from "./Pages/Categories";
+import SubCategory from "./Pages/SubCategory";
+import Units from "./Pages/Units";
+import Tax from "./Pages/Tax";
+import Customers from "./Pages/Customers";
+import Vendors from "./Pages/Vendors";
+import Shop from "./Pages/Shop";
+import Variant from "./Pages/Variant";
 
-import Stock from './Pages/Stock';
-import StockMovement from './Pages/StockMovement';
+// Sales
+import Sales from "./Pages/Sales";
+import Invoices from "./Pages/Invoices";
+import SalesReturn from "./Pages/SalesReturn";
+import Receipts from "./Pages/Receipts";
 
-import Payments from './Pages/Payments';
-import Transactions from './Pages/Transactions';
+// Purchase
+import Purchase from "./Pages/Purchase";
+import PurchaseReturn from "./Pages/PurchaseReturn";
 
-import Expenses from './Pages/Expenses';
-import ExpenseCategories from './Pages/ExpenseCategories';
+// Stock
+import Stock from "./Pages/Stock";
+import StockMovement from "./Pages/StockMovement";
 
-import User from './Pages/User';
-import Roles from './Pages/Roles';
+// Accounts
+import Payments from "./Pages/Payments";
+import Transactions from "./Pages/Transactions";
 
-import 'antd/dist/reset.css';
-import { ConfigProvider } from 'antd';
-import "antd/dist/reset.css";
+// Expenses
+import Expenses from "./Pages/Expenses";
+import ExpenseCategories from "./Pages/ExpenseCategories";
 
+// Users
+import User from "./Pages/User";
+import Roles from "./Pages/Roles";
+import Permissions from "./Pages/Permissions";
 
+// Auth Guard
+import PrivateRoute from "./Components/PrivateRoute";
 
+// Router setup
 const router = createBrowserRouter([
   {
-    path: '/',
-    element: <App />,
+    path: "/login",
+    element: <Login />, // login page is public
+  },
+  {
+    path: "/",
+    element: (
+      <PrivateRoute>
+        <App /> {/* All children routes will be protected */}
+      </PrivateRoute>
+    ),
     children: [
-      // Dashboard
       {
-        path: '/',
+        path: "/",
         element: <Dashboard />,
       },
-
-      // Masters
       {
-        path: '/products',
+        path: "/products",
         element: <Products />,
       },
       {
-        path: '/categories',
+        path: "/categories",
         element: <Categories />,
       },
       {
-        path: '/sub-categories',
-        element: <SubCategory />, 
-      },
-       {
-        path: '/units',
-        element: <Units />,      
+        path: "/sub-categories",
+        element: <SubCategory />,
       },
       {
-        path: '/taxes',
-        element: <Tax />,        
+        path: "/units",
+        element: <Units />,
       },
       {
-        path: '/customers',
+        path: "/taxes",
+        element: <Tax />,
+      },
+      {
+        path: "/customers",
         element: <Customers />,
       },
       {
-        path: '/vendors',
+        path: "/vendors",
         element: <Vendors />,
       },
       {
-        path: '/shops',
+        path: "/shops",
         element: <Shop />,
       },
       {
-        path: '/variants',
-        element: <Variant />,   
+        path: "/variants",
+        element: <Variant />,
       },
-
-      // Sales
       {
-        path: '/sales',
+        path: "/sales",
         element: <Sales />,
       },
       {
-        path: '/invoices',
+        path: "/invoices",
         element: <Invoices />,
       },
       {
-        path: '/sales-return',
+        path: "/sales-return",
         element: <SalesReturn />,
       },
       {
-        path: '/receipts',
+        path: "/receipts",
         element: <Receipts />,
       },
-
-      // Purchase
       {
-        path: '/purchase',
+        path: "/purchase",
         element: <Purchase />,
       },
       {
-        path: '/purchase-return',
+        path: "/purchase-return",
         element: <PurchaseReturn />,
       },
-
-      // Stock
       {
-        path: '/stock',
+        path: "/stock",
         element: <Stock />,
       },
       {
-        path: '/stock-movement',
+        path: "/stock-movement",
         element: <StockMovement />,
       },
-
-      // Accounts
       {
-        path: '/payments',
+        path: "/payments",
         element: <Payments />,
       },
       {
-        path: '/transactions',
+        path: "/transactions",
         element: <Transactions />,
       },
-
-      // Expenses
       {
-        path: '/expenses',
+        path: "/expenses",
         element: <Expenses />,
       },
       {
-        path: '/expense-categories',
+        path: "/expense-categories",
         element: <ExpenseCategories />,
       },
-
-      // Users
       {
-        path: '/user',
+        path: "/user",
         element: <User />,
       },
       {
-        path: '/roles',
+        path: "/roles",
         element: <Roles />,
+      },
+      {
+        path: "/permissions",
+        element: <Permissions />,
       },
     ],
   },
 ]);
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
-
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient} >
-    <ConfigProvider
-  theme={{
-    token: {
-      colorPrimary: '#b3b3cc', 
-      colorBgContainer: '#ffffff', 
-      borderRadius: 10,
-      fontFamily: "'Inter', sans-serif",
-    },
-    components: {
-      Layout: {
-        siderBg: '#29293d', 
-        headerBg: '#ffffff', 
-        bodyBg: '#f0f0f5',   
-      },
-      Menu: {
-        darkItemBg: '#29293d',
-        darkItemSelectedBg: '#4d4d70', 
-        darkItemSelectedColor: '#ffffff',
-      },
-    },
-  }}
->
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-    </ConfigProvider>
     </QueryClientProvider>
-  </StrictMode>
+  </StrictMode>,
 );

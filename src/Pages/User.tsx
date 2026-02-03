@@ -1,169 +1,184 @@
-
-import { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, Switch, message } from "antd";
+import React, { useState, useEffect } from "react";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Switch,
+  message,
+  Spin,
+} from "antd";
 import axios from "axios";
+import type { ColumnsType } from "antd/es/table";
 
-const { Option } = Select;
+interface Role {
+  _id: string;
+  role_name: string;
+}
 
 interface User {
   _id: string;
   name: string;
   email: string;
-  role: string;
-  permissions: {
-    products: boolean;
-    purchase: boolean;
-    sales: boolean;
-    stock: boolean;
-    accounts: boolean;
-  };
+  role: Role;
+  isActive: boolean;
 }
 
-const User = () => {
+const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-
   const [form] = Form.useForm();
 
-  const token = localStorage.getItem("token"); // Login token
-
-  // Fetch users
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get("/api/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUsers(res.data.data);
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Failed to fetch users");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch users & roles safely
   useEffect(() => {
-    fetchUsers();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [usersRes, rolesRes] = await Promise.all([
+          axios.get("/api/users"),
+          axios.get("/api/roles"),
+        ]);
+
+        // ensure we always have arrays
+        setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
+        setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
+      } catch (err) {
+        message.error("Failed to fetch users or roles");
+        setUsers([]);
+        setRoles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  // Open modal for add/edit
-  const openModal = (user?: User) => {
-    setEditingUser(user || null);
-    setIsModalVisible(true);
-    form.setFieldsValue(user || { name: "", email: "", role: "staff", permissions: {} });
+  const handleAdd = () => {
+    setEditingUser(null);
+    form.resetFields();
+    setModalVisible(true);
   };
 
-  const handleCancel = () => setIsModalVisible(false);
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    form.setFieldsValue({
+      name: user.name,
+      email: user.email,
+      role: user.role?._id,
+      isActive: user.isActive,
+    });
+    setModalVisible(true);
+  };
 
-  // Save user (create or update)
-  const handleSave = async (values: any) => {
+  const handleOk = async () => {
     try {
+      const values = await form.validateFields();
+
       if (editingUser) {
-        await axios.put(`/api/users/update/${editingUser._id}`, values, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.put(`/api/users/${editingUser._id}`, values);
         message.success("User updated successfully");
       } else {
-        await axios.post("/api/users/create", values, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        message.success("User created successfully");
+        await axios.post("/api/users", values);
+        message.success("User added successfully");
       }
-      fetchUsers();
-      setIsModalVisible(false);
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Failed to save user");
+
+      setModalVisible(false);
+
+      // Refresh users after save
+      const res = await axios.get("/api/users");
+      setUsers(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      message.error("Failed to save user");
     }
   };
 
-  // Delete user
-  const handleDelete = async (id: string) => {
-    try {
-      await axios.delete(`/api/users/delete/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      message.success("User deleted successfully");
-      fetchUsers();
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Failed to delete user");
-    }
-  };
-
-  const columns = [
+  const columns: ColumnsType<User> = [
     { title: "Name", dataIndex: "name", key: "name" },
     { title: "Email", dataIndex: "email", key: "email" },
-    { title: "Role", dataIndex: "role", key: "role" },
     {
-      title: "Permissions",
-      key: "permissions",
-      render: (_: any, record: User) =>
-        Object.entries(record.permissions)
-          .filter(([_, v]) => v)
-          .map(([k]) => k)
-          .join(", "),
+      title: "Role",
+      key: "role",
+      render: (_, record) => record.role?.role_name || "No Role",
+    },
+    {
+      title: "Status",
+      dataIndex: "isActive",
+      key: "status",
+      render: (active) => <Switch checked={active} disabled />,
     },
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: User) => (
-        <>
-          <Button type="link" onClick={() => openModal(record)}>Edit</Button>
-          <Button type="link" danger onClick={() => handleDelete(record._id)}>Delete</Button>
-        </>
+      render: (_, record) => (
+        <Button type="link" onClick={() => handleEdit(record)}>
+          Edit
+        </Button>
       ),
     },
   ];
 
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: 20 }}>
-      <Button type="primary" style={{ marginBottom: 16 }} onClick={() => openModal()}>
+    <div style={{ padding: "20px" }}>
+      <Button type="primary" onClick={handleAdd} style={{ marginBottom: 16 }}>
         Add User
       </Button>
 
-      <Table rowKey="_id" dataSource={users} columns={columns} loading={loading} />
+      <Table columns={columns} dataSource={users} rowKey="_id" />
 
       <Modal
         title={editingUser ? "Edit User" : "Add User"}
-        visible={isModalVisible}
-        open={isModalVisible}   
-        onCancel={handleCancel}
-        onOk={() => form.submit()}
+        open={modalVisible}
+        onOk={handleOk}
+        onCancel={() => setModalVisible(false)}
+        destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="name"
+            label="Name"
+            rules={[{ required: true, message: "Please enter name" }]}
+          >
             <Input />
-          </Form.Item>
-          <Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-            <Select>
-              <Option value="admin">Admin</Option>
-              <Option value="staff">Staff</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="Permissions">
-            <Form.Item name={["permissions", "products"]} valuePropName="checked" noStyle>
-              <Switch checkedChildren="Products" unCheckedChildren="Products" />
-            </Form.Item>
-            <Form.Item name={["permissions", "purchase"]} valuePropName="checked" noStyle>
-              <Switch checkedChildren="Purchase" unCheckedChildren="Purchase" style={{ marginLeft: 8 }} />
-            </Form.Item>
-            <Form.Item name={["permissions", "sales"]} valuePropName="checked" noStyle>
-              <Switch checkedChildren="Sales" unCheckedChildren="Sales" style={{ marginLeft: 8 }} />
-            </Form.Item>
-            <Form.Item name={["permissions", "stock"]} valuePropName="checked" noStyle>
-              <Switch checkedChildren="Stock" unCheckedChildren="Stock" style={{ marginLeft: 8 }} />
-            </Form.Item>
-            <Form.Item name={["permissions", "accounts"]} valuePropName="checked" noStyle>
-              <Switch checkedChildren="Accounts" unCheckedChildren="Accounts" style={{ marginLeft: 8 }} />
-            </Form.Item>
           </Form.Item>
 
-          <Form.Item name="password" label="Password" rules={[{ required: !editingUser }]}>
-            <Input.Password placeholder={editingUser ? "Leave blank to keep current" : ""} />
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[{ required: true, message: "Please enter email" }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="role"
+            label="Role"
+            rules={[{ required: true, message: "Please select a role" }]}
+          >
+            <Select placeholder="Select role">
+              {Array.isArray(roles) &&
+                roles.map((role) => (
+                  <Select.Option key={role._id} value={role._id}>
+                    {role.role_name}
+                  </Select.Option>
+                ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item name="isActive" label="Active" valuePropName="checked">
+            <Switch />
           </Form.Item>
         </Form>
       </Modal>
@@ -171,4 +186,4 @@ const User = () => {
   );
 };
 
-export default User;
+export default UsersPage;
