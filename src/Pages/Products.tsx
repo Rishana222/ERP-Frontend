@@ -14,7 +14,7 @@ import { createStyles } from "antd-style";
 
 const { Option } = Select;
 
-
+/* -------------------- Styles -------------------- */
 const useStyle = createStyles(({ css }) => ({
   customTable: css`
     .ant-table {
@@ -26,6 +26,7 @@ const useStyle = createStyles(({ css }) => ({
   `,
 }));
 
+/* -------------------- Types -------------------- */
 interface Product {
   key: string;
   name: string;
@@ -41,7 +42,7 @@ interface Product {
   isActive: boolean;
 }
 
-
+/* -------------------- Component -------------------- */
 const Products: React.FC = () => {
   const { styles } = useStyle();
 
@@ -81,7 +82,7 @@ const Products: React.FC = () => {
             size="small"
             onClick={() =>
               setProducts((prev) =>
-                prev.filter((item) => item.key !== record.key)
+                prev.filter((item) => item.key !== record.key),
               )
             }
           >
@@ -147,7 +148,11 @@ const Products: React.FC = () => {
             form.resetFields();
           }}
         >
-          <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="name"
+            label="Product Name"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
 
@@ -162,7 +167,11 @@ const Products: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
 
@@ -217,10 +226,8 @@ const Products: React.FC = () => {
           onFinish={(values) => {
             setProducts((prev) =>
               prev.map((p) =>
-                p.key === editingProduct?.key
-                  ? { ...p, ...values }
-                  : p
-              )
+                p.key === editingProduct?.key ? { ...p, ...values } : p,
+              ),
             );
             setOpenUpdateModal(false);
           }}
