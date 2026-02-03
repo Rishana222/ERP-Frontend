@@ -6,7 +6,7 @@ import { createStyles } from "antd-style";
 
 const { Option } = Select;
 
-// --- Styles ---
+
 const useStyle = createStyles(({ css }) => ({
   customTable: css`
     .ant-table {
@@ -19,7 +19,7 @@ const useStyle = createStyles(({ css }) => ({
   `,
 }));
 
-// --- Table row type ---
+
 interface ProductItem {
   key: React.Key;
   product: string;
