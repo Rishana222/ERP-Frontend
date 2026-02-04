@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Layout, Menu, Button, theme } from 'antd';
+import { Layout, Menu, Button, theme, Dropdown, Space, Avatar } from 'antd';
+import { useDispatch, useSelector } from 'react-redux'; //
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { logout } from './store/authSlice'; //
+import type { RootState } from './store'; 
 import logo from './assets/WhatsApp_Image_2026-01-27_at_10.45.23_AM-removebg-preview.png';
 import {
   MenuFoldOutlined,
@@ -13,6 +16,7 @@ import {
   DatabaseOutlined,
   BankOutlined,
   DollarOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -21,10 +25,39 @@ const App = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+
+ 
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+ 
+  const handleLogout = () => {
+    dispatch(logout()); 
+    navigate('/login');
+  };
+
+ 
+  const userMenuItems = [
+    {
+      key: 'profile',
+      label: 'My Profile',
+      icon: <UserOutlined />,
+    },
+    {
+      type: 'divider' as const,
+    },
+    {
+      key: 'logout',
+      label: 'Logout',
+      icon: <LogoutOutlined />,
+      danger: true,
+      onClick: handleLogout, 
+    },
+  ];
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -56,12 +89,7 @@ const App = () => {
           selectedKeys={[location.pathname]}
           onClick={({ key }) => navigate(key)}
           items={[
-            {
-              key: "/",
-              icon: <DesktopOutlined />,
-              label: "Dashboard",
-            },
-
+            { key: "/", icon: <DesktopOutlined />, label: "Dashboard" },
             {
               key: "masters",
               icon: <AppstoreOutlined />,
@@ -78,7 +106,6 @@ const App = () => {
                 { key: "/variants", label: "Variants" },
               ],
             },
-
             {
               key: "sales",
               icon: <ShoppingCartOutlined />,
@@ -90,7 +117,6 @@ const App = () => {
                 { key: "/receipts", label: "Receipts" },
               ],
             },
-
             {
               key: "purchase",
               icon: <ShoppingOutlined />,
@@ -101,7 +127,6 @@ const App = () => {
                 { key: "/payments", label: "Vendor Payments" },
               ],
             },
-
             {
               key: "stock",
               icon: <DatabaseOutlined />,
@@ -111,7 +136,6 @@ const App = () => {
                 { key: "/stock-movement", label: "Stock History" },
               ],
             },
-
             {
               key: "accounts",
               icon: <BankOutlined />,
@@ -121,7 +145,6 @@ const App = () => {
                 { key: "/transactions", label: "Transactions" },
               ],
             },
-
             {
               key: "expenses",
               icon: <DollarOutlined />,
@@ -131,7 +154,6 @@ const App = () => {
                 { key: "/expense-categories", label: "Expense Categories" },
               ],
             },
-
             {
               key: "users",
               icon: <UserOutlined />,
@@ -147,17 +169,27 @@ const App = () => {
       </Sider>
 
       <Layout>
-        <Header style={{ padding: 0 }}>
+        <Header style={{ 
+          padding: '0 24px 0 0', 
+          background: colorBgContainer, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between' 
+        }}>
           <Button
-            type="primary"
+            type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: 16,
-              width: 64,
-              height: 64,
-            }}
+            style={{ fontSize: 16, width: 64, height: 64 }}
           />
+
+          
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+            <Space style={{ cursor: 'pointer', padding: '0 8px' }}>
+              <Avatar icon={<UserOutlined />} />
+              <span style={{ fontWeight: 500 }}>{user?.name || 'Admin'}</span>
+            </Space>
+          </Dropdown>
         </Header>
 
         <Content
