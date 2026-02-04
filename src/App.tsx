@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Layout, Menu, Button, theme, Dropdown, Space, Avatar } from 'antd';
-import { useDispatch, useSelector } from 'react-redux'; //
+import { useDispatch, useSelector } from 'react-redux';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { logout } from './store/authSlice'; //
-import type { RootState } from './store'; 
-import logo from './assets/WhatsApp_Image_2026-01-27_at_10.45.23_AM-removebg-preview.png';
+import { logout } from './store/authSlice';
+import type { RootState } from './store';
+import logo from './assets/eeee.png';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -27,20 +27,20 @@ const App = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
- 
+
   const { user } = useSelector((state: RootState) => state.auth);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
- 
+
   const handleLogout = () => {
-    dispatch(logout()); 
+    dispatch(logout());
     navigate('/login');
   };
 
- 
+
   const userMenuItems = [
     {
       key: 'profile',
@@ -55,7 +55,7 @@ const App = () => {
       label: 'Logout',
       icon: <LogoutOutlined />,
       danger: true,
-      onClick: handleLogout, 
+      onClick: handleLogout,
     },
   ];
 
@@ -78,7 +78,12 @@ const App = () => {
           <img
             src={logo}
             alt="Logo"
-            style={{ height: "125px", width: "auto", marginTop: "55px" }}
+            style={{
+              height: collapsed ? "70px" : "125px",
+              width: "auto",
+              marginTop: collapsed ? "12px" : "55px",
+              transition: "all 0.3s ease",
+            }}
           />
         </div>
 
@@ -169,12 +174,12 @@ const App = () => {
       </Sider>
 
       <Layout>
-        <Header style={{ 
-          padding: '0 24px 0 0', 
-          background: colorBgContainer, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between' 
+        <Header style={{
+          padding: '0 24px 0 0',
+          background: colorBgContainer,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
         }}>
           <Button
             type="text"
@@ -183,7 +188,7 @@ const App = () => {
             style={{ fontSize: 16, width: 64, height: 64 }}
           />
 
-          
+
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
             <Space style={{ cursor: 'pointer', padding: '0 8px' }}>
               <Avatar icon={<UserOutlined />} />

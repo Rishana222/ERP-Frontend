@@ -1,9 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Provider } from "react-redux"; 
-import { store } from "./store/index"; 
+import { Provider } from "react-redux";
+import { store } from "./store/index";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { ConfigProvider } from "antd";
 import "./index.css";
 
 // Pages
@@ -86,14 +87,54 @@ const router = createBrowserRouter([
 ]);
 
 const queryClient = new QueryClient();
+const theme = {
+  token: {
+    colorPrimary: "#c2d6d6",        // main brand color
+    colorBgLayout: "#eef4f4",       // overall layout background
+    colorBgContainer: "#ffffff",    // card, content bg
+        colorText: "#5f8f8f",
+    colorTextHeading: "#5f8f8f",
+    colorIcon: "#5f8f8f",
+    colorIconHover: "#4f7f7f",
+    borderRadius: 10,
+    fontSize: 14,
+  },
+  components: {
+    Button: {
+      colorPrimary: "#c2d6d6",
+      colorPrimaryHover: "#b4caca",
+      colorPrimaryActive: "#a6bcbc",
+      borderRadius: 8,
+      colorBgTextHover: "#f0f5f5",
+      colorTextHover: "#4f7f7f",
+     
+    },
+    Table: {
+      headerBg: "#c2d6d6",
+      headerColor: "#000",
+      rowHoverBg: "#eef4f4",
+      borderColor: "#d9e6e6",
+    },
+    Menu: {
+      darkItemBg: "#1f2d2d",
+      darkItemSelectedBg: "#c2d6d6",
+      darkItemSelectedColor: "#000",
+      darkItemHoverBg: "#b4caca",
+    },
+    Layout: {
+      siderBg: "#1f2d2d",
+      headerBg: "#ffffff",
+    },
+  },
+};
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-   
-    <Provider store={store}> 
+    <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-      
-        <RouterProvider router={router} />
+        <ConfigProvider theme={theme}>
+          <RouterProvider router={router} />
+        </ConfigProvider>
       </QueryClientProvider>
     </Provider>
   </StrictMode>
