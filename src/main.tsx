@@ -1,195 +1,100 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import {QueryClient,QueryClientProvider} from "@tanstack/react-query"
-import App from './App';
-import Dashboard from './Pages/Dashboard';
-import Products from './Pages/Products';
-import Categories from './Pages/Categories';
-import SubCategory from './Pages/SubCategory';
-import Tax from './Pages/Tax';
-import Units from './Pages/Units';
-import Customers from './Pages/Customers';
-import Vendors from './Pages/Vendors';
-import Shop from './Pages/Shop';
-import Variant from './Pages/Variant';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { Provider } from "react-redux"; // Redux Provider import ചെയ്യുന്നു
+import { store } from "./store/index"; // നിങ്ങളുടെ Redux Store
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import "./index.css";
 
-import Sales from './Pages/Sales';
-import Invoices from './Pages/Invoices';
-import SalesReturn from './Pages/SalesReturn';
-import Receipts from './Pages/Receipts';
+// Pages
+import App from "./App";
+import Login from "./Pages/Login";
+import Dashboard from "./Pages/Dashboard";
+import Products from "./Pages/Products";
+import Categories from "./Pages/Categories";
+import SubCategory from "./Pages/SubCategory";
+import Units from "./Pages/Units";
+import Tax from "./Pages/Tax";
+import Customers from "./Pages/Customers";
+import Vendors from "./Pages/Vendors";
+import Shop from "./Pages/Shop";
+import Variant from "./Pages/Variant";
+import Sales from "./Pages/Sales";
+import Invoices from "./Pages/Invoices";
+import SalesReturn from "./Pages/SalesReturn";
+import Receipts from "./Pages/Receipts";
+import Purchase from "./Pages/Purchase";
+import PurchaseReturn from "./Pages/PurchaseReturn";
+import Stock from "./Pages/Stock";
+import StockMovement from "./Pages/StockMovement";
+import Payments from "./Pages/Payments";
+import Transactions from "./Pages/Transactions";
+import Expenses from "./Pages/Expenses";
+import ExpenseCategories from "./Pages/ExpenseCategories";
+import User from "./Pages/User";
+import Roles from "./Pages/Roles";
+import Permissions from "./Pages/Permissions";
 
-import Purchase from './Pages/Purchase';
-import PurchaseReturn from './Pages/PurchaseReturn';
+// Auth Guards
+import { PrivateRoute, LoginProtect } from "./Components/PrivateRoute";
 
-import Stock from './Pages/Stock';
-import StockMovement from './Pages/StockMovement';
-
-import Payments from './Pages/Payments';
-import Transactions from './Pages/Transactions';
-
-import Expenses from './Pages/Expenses';
-import ExpenseCategories from './Pages/ExpenseCategories';
-
-import User from './Pages/User';
-import Roles from './Pages/Roles';
-
-import 'antd/dist/reset.css';
-import { ConfigProvider } from 'antd';
-import "antd/dist/reset.css";
-
-
-
+// Router Configuration
 const router = createBrowserRouter([
   {
-    path: '/',
-    element: <App />,
+    path: "/login",
+    element: (
+      <LoginProtect>
+        <Login />
+      </LoginProtect>
+    ),
+  },
+  {
+    path: "/",
+    element: (
+      <PrivateRoute>
+        <App />
+      </PrivateRoute>
+    ),
     children: [
-      // Dashboard
-      {
-        path: '/',
-        element: <Dashboard />,
-      },
-
-      // Masters
-      {
-        path: '/products',
-        element: <Products />,
-      },
-      {
-        path: '/categories',
-        element: <Categories />,
-      },
-      {
-        path: '/sub-categories',
-        element: <SubCategory />, 
-      },
-       {
-        path: '/units',
-        element: <Units />,      
-      },
-      {
-        path: '/taxes',
-        element: <Tax />,        
-      },
-      {
-        path: '/customers',
-        element: <Customers />,
-      },
-      {
-        path: '/vendors',
-        element: <Vendors />,
-      },
-      {
-        path: '/shops',
-        element: <Shop />,
-      },
-      {
-        path: '/variants',
-        element: <Variant />,   
-      },
-
-      // Sales
-      {
-        path: '/sales',
-        element: <Sales />,
-      },
-      {
-        path: '/invoices',
-        element: <Invoices />,
-      },
-      {
-        path: '/sales-return',
-        element: <SalesReturn />,
-      },
-      {
-        path: '/receipts',
-        element: <Receipts />,
-      },
-
-      // Purchase
-      {
-        path: '/purchase',
-        element: <Purchase />,
-      },
-      {
-        path: '/purchase-return',
-        element: <PurchaseReturn />,
-      },
-
-      // Stock
-      {
-        path: '/stock',
-        element: <Stock />,
-      },
-      {
-        path: '/stock-movement',
-        element: <StockMovement />,
-      },
-
-      // Accounts
-      {
-        path: '/payments',
-        element: <Payments />,
-      },
-      {
-        path: '/transactions',
-        element: <Transactions />,
-      },
-
-      // Expenses
-      {
-        path: '/expenses',
-        element: <Expenses />,
-      },
-      {
-        path: '/expense-categories',
-        element: <ExpenseCategories />,
-      },
-
-      // Users
-      {
-        path: '/user',
-        element: <User />,
-      },
-      {
-        path: '/roles',
-        element: <Roles />,
-      },
+      { index: true, element: <Dashboard /> },
+      { path: "products", element: <Products /> },
+      { path: "categories", element: <Categories /> },
+      { path: "sub-categories", element: <SubCategory /> },
+      { path: "units", element: <Units /> },
+      { path: "taxes", element: <Tax /> },
+      { path: "customers", element: <Customers /> },
+      { path: "vendors", element: <Vendors /> },
+      { path: "shops", element: <Shop /> },
+      { path: "variants", element: <Variant /> },
+      { path: "sales", element: <Sales /> },
+      { path: "invoices", element: <Invoices /> },
+      { path: "sales-return", element: <SalesReturn /> },
+      { path: "receipts", element: <Receipts /> },
+      { path: "purchase", element: <Purchase /> },
+      { path: "purchase-return", element: <PurchaseReturn /> },
+      { path: "stock", element: <Stock /> },
+      { path: "stock-movement", element: <StockMovement /> },
+      { path: "payments", element: <Payments /> },
+      { path: "transactions", element: <Transactions /> },
+      { path: "expenses", element: <Expenses /> },
+      { path: "expense-categories", element: <ExpenseCategories /> },
+      { path: "user", element: <User /> },
+      { path: "roles", element: <Roles /> },
+      { path: "permissions", element: <Permissions /> },
     ],
   },
 ]);
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
-
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient} >
-    <ConfigProvider
-  theme={{
-    token: {
-      colorPrimary: '#b3b3cc', 
-      colorBgContainer: '#ffffff', 
-      borderRadius: 10,
-      fontFamily: "'Inter', sans-serif",
-    },
-    components: {
-      Layout: {
-        siderBg: '#29293d', 
-        headerBg: '#ffffff', 
-        bodyBg: '#f0f0f5',   
-      },
-      Menu: {
-        darkItemBg: '#29293d',
-        darkItemSelectedBg: '#4d4d70', 
-        darkItemSelectedColor: '#ffffff',
-      },
-    },
-  }}
->
-      <RouterProvider router={router} />
-    </ConfigProvider>
-    </QueryClientProvider>
+    {/* 1. Redux Provider ചേർക്കുന്നു - ഇത് വഴി എല്ലാ പേജിലും റെഡക്സ് കിട്ടും */}
+    <Provider store={store}> 
+      <QueryClientProvider client={queryClient}>
+        {/* 2. Router ഇവിടെ ലോഡ് ചെയ്യുന്നു */}
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </Provider>
   </StrictMode>
 );

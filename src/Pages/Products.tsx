@@ -82,7 +82,7 @@ const Products: React.FC = () => {
             size="small"
             onClick={() =>
               setProducts((prev) =>
-                prev.filter((item) => item.key !== record.key)
+                prev.filter((item) => item.key !== record.key),
               )
             }
           >
@@ -127,7 +127,7 @@ const Products: React.FC = () => {
         style={{ marginTop: 16 }}
       />
 
-      {/* -------------------- Add Product Modal -------------------- */}
+      {/* Add Product Modal */}
       <Modal
         title="Add Product"
         open={openCreateModal}
@@ -148,7 +148,11 @@ const Products: React.FC = () => {
             form.resetFields();
           }}
         >
-          <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="name"
+            label="Product Name"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
 
@@ -163,7 +167,11 @@ const Products: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
 
@@ -204,7 +212,7 @@ const Products: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* -------------------- Update Product Modal -------------------- */}
+      {/* Update Product Modal */}
       <Modal
         title="Update Product"
         open={openUpdateModal}
@@ -218,10 +226,8 @@ const Products: React.FC = () => {
           onFinish={(values) => {
             setProducts((prev) =>
               prev.map((p) =>
-                p.key === editingProduct?.key
-                  ? { ...p, ...values }
-                  : p
-              )
+                p.key === editingProduct?.key ? { ...p, ...values } : p,
+              ),
             );
             setOpenUpdateModal(false);
           }}

@@ -27,119 +27,119 @@ const App = () => {
   } = theme.useToken();
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: "100vh" }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
-
         <div
           style={{
             height: 64,
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            gap: '10px',
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontWeight: "bold",
+            gap: "10px",
           }}
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
         >
           <img
             src={logo}
             alt="Logo"
-            style={{ height: '125px', width: 'auto', marginTop: '55px' }}
+            style={{ height: "125px", width: "auto", marginTop: "55px" }}
           />
         </div>
 
         <Menu
           theme="dark"
           mode="inline"
-          style={{ marginTop: '60px', border: 'none' }}
+          style={{ marginTop: "60px", border: "none" }}
           selectedKeys={[location.pathname]}
           onClick={({ key }) => navigate(key)}
           items={[
             {
-              key: '/',
+              key: "/",
               icon: <DesktopOutlined />,
-              label: 'Dashboard',
+              label: "Dashboard",
             },
 
             {
-              key: 'masters',
+              key: "masters",
               icon: <AppstoreOutlined />,
-              label: 'Masters',
+              label: "Masters",
               children: [
-                { key: '/products', label: 'Products' },
-                { key: '/categories', label: 'Categories' },
-                { key: '/sub-categories', label: 'SubCategories' },
-                { key: '/units', label: 'Units' },
-                { key: '/taxes', label: 'Taxes' },
-                { key: '/customers', label: 'Customers' },
-                { key: '/vendors', label: 'Vendors' },
-                { key: '/shops', label: 'Shops/Branches' },
-                {key: '/variants', label: 'Variants' }
+                { key: "/products", label: "Products" },
+                { key: "/categories", label: "Categories" },
+                { key: "/sub-categories", label: "SubCategories" },
+                { key: "/units", label: "Units" },
+                { key: "/taxes", label: "Taxes" },
+                { key: "/customers", label: "Customers" },
+                { key: "/vendors", label: "Vendors" },
+                { key: "/shops", label: "Shops/Branches" },
+                { key: "/variants", label: "Variants" },
               ],
             },
 
             {
-              key: 'sales',
+              key: "sales",
               icon: <ShoppingCartOutlined />,
-              label: 'Sales',
+              label: "Sales",
               children: [
-                { key: '/sales', label: 'New Sale' },
-                { key: '/invoices', label: 'Invoices' },
-                { key: '/sales-return', label: 'Sales Return' },
-                { key: '/receipts', label: 'Receipts' },
+                { key: "/sales", label: "New Sale" },
+                { key: "/invoices", label: "Invoices" },
+                { key: "/sales-return", label: "Sales Return" },
+                { key: "/receipts", label: "Receipts" },
               ],
             },
 
             {
-              key: 'purchase',
+              key: "purchase",
               icon: <ShoppingOutlined />,
-              label: 'Purchase',
+              label: "Purchase",
               children: [
-                { key: '/purchase', label: 'New Purchase' },
-                { key: '/purchase-return', label: 'Purchase Return' },
-                { key: '/payments', label: 'Vendor Payments' },
+                { key: "/purchase", label: "New Purchase" },
+                { key: "/purchase-return", label: "Purchase Return" },
+                { key: "/payments", label: "Vendor Payments" },
               ],
             },
 
             {
-              key: 'stock',
+              key: "stock",
               icon: <DatabaseOutlined />,
-              label: 'Inventory',
+              label: "Inventory",
               children: [
-                { key: '/stock', label: 'Stock Overview' },
-                { key: '/stock-movement', label: 'Stock History' },
+                { key: "/stock", label: "Stock Overview" },
+                { key: "/stock-movement", label: "Stock History" },
               ],
             },
 
             {
-              key: 'accounts',
+              key: "accounts",
               icon: <BankOutlined />,
-              label: 'Accounts',
+              label: "Accounts",
               children: [
-                { key: '/payments', label: 'Payments' },
-                { key: '/transactions', label: 'Transactions' },
+                { key: "/payments", label: "Payments" },
+                { key: "/transactions", label: "Transactions" },
               ],
             },
 
             {
-              key: 'expenses',
+              key: "expenses",
               icon: <DollarOutlined />,
-              label: 'Expenses',
+              label: "Expenses",
               children: [
-                { key: '/expenses', label: 'Expenses' },
-                { key: '/expense-categories', label: 'Expense Categories' },
+                { key: "/expenses", label: "Expenses" },
+                { key: "/expense-categories", label: "Expense Categories" },
               ],
             },
 
             {
-              key: 'users',
+              key: "users",
               icon: <UserOutlined />,
-              label: 'Users & Roles',
+              label: "Users & Roles",
               children: [
-                { key: '/user', label: 'Users' },
-                { key: '/roles', label: 'Roles & Permissions' },
+                { key: "/user", label: "Users" },
+                { key: "/roles", label: "Roles " },
+                { key: "/permissions", label: "Permissions" },
               ],
             },
           ]}
@@ -162,7 +162,7 @@ const App = () => {
 
         <Content
           style={{
-            margin: '24px 16px',
+            margin: "24px 16px",
             padding: 24,
             minHeight: 280,
             background: colorBgContainer,
