@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import {
   Button,
   Form,
@@ -28,12 +27,6 @@ const useStyle = createStyles(({ css }) => ({
 }));
 
 /* -------------------- Types -------------------- */
-=======
-import { Button,Form,Input,InputNumber,Modal,Select,Switch,Table,} from "antd";
- import type { ColumnsType } from "antd/es/table";
-import { useState } from "react";
- const { Option } = Select; 
->>>>>>> 9d8d001ee0ab36aa988effcf4c9dcca03a991081
 interface Product {
   key: string;
   name: string;
@@ -47,13 +40,9 @@ interface Product {
   taxPercent?: number;
   stock?: number;
   isActive: boolean;
-<<<<<<< HEAD
 }
 
 /* -------------------- Component -------------------- */
-=======
-}  
->>>>>>> 9d8d001ee0ab36aa988effcf4c9dcca03a991081
 const Products: React.FC = () => {
   const { styles } = useStyle();
 
