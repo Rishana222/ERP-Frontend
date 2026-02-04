@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { setCredentials } from '../store/authSlice';
 import { loginService } from '../Utils/LoginAPI'; 
-import erpImage from '../assets/ERP bg.jpg'; 
+import teamERP from '../assets/group.jpg'; 
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -44,7 +44,7 @@ const Login: React.FC = () => {
         {/* Left Side: Design Image */}
         <div className="w-full md:w-1/2 relative bg-slate-900">
           <img 
-            src={erpImage} 
+            src={teamERP} 
             alt="ERP System" 
             className="absolute inset-0 w-full h-full object-cover opacity-70"
           />

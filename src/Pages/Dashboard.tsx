@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
         // Example trend data: last 6 months
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
         setTrendData(
-          months.map((month, idx) => ({
+          months.map((month, ) => ({
             month,
             sales: Math.floor(Math.random() * 1000),
             purchases: Math.floor(Math.random() * 500),
