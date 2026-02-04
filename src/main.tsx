@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Provider } from "react-redux"; // Redux Provider import ചെയ്യുന്നു
-import { store } from "./store/index"; // നിങ്ങളുടെ Redux Store
+import { Provider } from "react-redux"; 
+import { store } from "./store/index"; 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
@@ -89,10 +89,10 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {/* 1. Redux Provider ചേർക്കുന്നു - ഇത് വഴി എല്ലാ പേജിലും റെഡക്സ് കിട്ടും */}
+   
     <Provider store={store}> 
       <QueryClientProvider client={queryClient}>
-        {/* 2. Router ഇവിടെ ലോഡ് ചെയ്യുന്നു */}
+      
         <RouterProvider router={router} />
       </QueryClientProvider>
     </Provider>
