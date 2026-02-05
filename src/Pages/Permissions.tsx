@@ -1,32 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Select,
-  Tag,
-  message,
-  Popconfirm,
-  Space,
-} from "antd";
-import axios from "axios";
+import { Table, Button, Modal, Form, Select, Tag, message, Popconfirm, Space } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { getPermissions, createPermission, updatePermission, deletePermission } from "../Utils/permissionsApi";
 
-// API Config - ഇത് ഒരു പ്രത്യേക ഫയലിലേക്ക് മാറ്റുന്നതാണ് ഉചിതം
-const API_BASE_URL = "http://localhost:3000/api/permissions";
-
-const ERP_ACCESSES = [
-  "users",
-  "products",
-  "purchase",
-  "sales",
-  "stock",
-  "accounts",
-  "reports",
-  "vendors",
-  "customers",
-];
+const ERP_ACCESSES = ["users","products","purchase","sales","stock","accounts","reports","vendors","customers"];
 
 interface Permission {
   _id: string;
@@ -37,54 +14,36 @@ interface Permission {
 const Permissions: React.FC = () => {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPermission, setEditingPermission] = useState<Permission | null>(
-    null,
-  );
+  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
-  // Helper: Get Auth Headers
-  const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem("token");
-    return { headers: { Authorization: `Bearer ${token}` } };
-  }, []);
-
-  // Fetch Permissions
   const fetchPermissions = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/get`, getAuthHeaders());
-      // ഡാറ്റ അറേ ആണോ എന്ന് ഉറപ്പുവരുത്തുന്നു
-      const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const data = await getPermissions();
       setPermissions(data);
     } catch (err: any) {
-      message.error(
-        err.response?.data?.message || "Failed to fetch permissions",
-      );
+      message.error(err.response?.data?.message || "Failed to fetch permissions");
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeaders]);
+  }, []);
 
   useEffect(() => {
     fetchPermissions();
   }, [fetchPermissions]);
 
-  // Create or Update
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
       setLoading(true);
 
       if (editingPermission) {
-        await axios.put(
-          `${API_BASE_URL}/update/${editingPermission._id}`,
-          values,
-          getAuthHeaders(),
-        );
+        await updatePermission(editingPermission._id, values);
         message.success("Permission updated successfully");
       } else {
-        await axios.post(`${API_BASE_URL}/create`, values, getAuthHeaders());
+        await createPermission(values);
         message.success("Permission added successfully");
       }
 
@@ -98,13 +57,12 @@ const Permissions: React.FC = () => {
     }
   };
 
-  // Delete
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`${API_BASE_URL}/delete/${id}`, getAuthHeaders());
+      await deletePermission(id);
       message.success("Permission deleted");
       fetchPermissions();
-    } catch (err: any) {
+    } catch {
       message.error("Delete failed");
     }
   };
@@ -141,7 +99,6 @@ const Permissions: React.FC = () => {
           >
             Edit
           </Button>
-
           <Popconfirm
             title="Are you sure?"
             onConfirm={() => handleDelete(record._id)}
@@ -157,13 +114,7 @@ const Permissions: React.FC = () => {
 
   return (
     <div style={{ padding: "24px" }}>
-      <div
-        style={{
-          marginBottom: 16,
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
+      <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between" }}>
         <h2>Manage Permissions</h2>
         <Button
           type="primary"
@@ -196,9 +147,7 @@ const Permissions: React.FC = () => {
           <Form.Item
             name="name"
             label="Permission Name"
-            rules={[
-              { required: true, message: "Please select an access type" },
-            ]}
+            rules={[{ required: true, message: "Please select an access type" }]}
           >
             <Select placeholder="Select access type">
               {ERP_ACCESSES.map((access) => (
