@@ -136,7 +136,7 @@ const UsersPage: React.FC = () => {
         Add User
       </Button>
 
-      <Table columns={columns} dataSource={users} rowKey="_id" />
+      <Table columns={columns} dataSource={users} rowKey="_id" bordered />
 
       <Modal
         title={editingUser ? "Edit User" : "Add User"}

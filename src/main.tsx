@@ -89,43 +89,63 @@ const router = createBrowserRouter([
 const queryClient = new QueryClient();
 const theme = {
   token: {
-    colorPrimary: "#c2d6d6", // main brand color
-    colorBgLayout: "#eef4f4", // overall layout background
-    colorBgContainer: "#ffffff", // card, content bg
-    colorText: "#5f8f8f",
-    colorTextHeading: "#5f8f8f",
-    colorIcon: "#5f8f8f",
-    colorIconHover: "#4f7f7f",
+    colorPrimary: "#38BDF8",
+
+    // 🌑 lighter darks
+    colorBgLayout: "#0F172A",     // was #020617
+    colorBgContainer: "#1E293B",  // was #111827
+
+    colorText: "#E5E7EB",
+    colorTextHeading: "#38BDF8",
+    colorIcon: "#94A3B8",
+    colorIconHover: "#38BDF8",
+
     borderRadius: 10,
     fontSize: 14,
   },
+
   components: {
-    Button: {
-      colorPrimary: "#c2d6d6",
-      colorPrimaryHover: "#b4caca",
-      colorPrimaryActive: "#a6bcbc",
-      borderRadius: 8,
-      colorBgTextHover: "#f0f5f5",
-      colorTextHover: "#4f7f7f",
+    // 📦 Modal / Form container
+    Modal: {
+      contentBg: "#0F172A",   // lighter dark
+      headerBg: "#0F172A",
+      titleColor: "#38BDF8",
     },
+
+    // 🧾 Form labels
+    Form: {
+      labelColor: "#E5E7EB",
+      labelRequiredMarkColor: "#EF4444",
+    },
+
+    // 📝 Inputs (still light for contrast)
+    Input: {
+      colorBgContainer: "#F8FAFC",   // soft white (not pure)
+      colorText: "#0F172A",
+      colorTextPlaceholder: "#64748B",
+      colorBorder: "#CBD5E1",
+      activeBorderColor: "#38BDF8",
+    },
+
+    // 🔽 Select
+    Select: {
+      colorBgContainer: "#F8FAFC",
+      colorText: "#0F172A",
+      colorBorder: "#CBD5E1",
+      optionSelectedBg: "#E0F2FE",
+      optionActiveBg: "#F1F5F9",
+    },
+
+    // 📊 Table header (lighter dark)
     Table: {
-      headerBg: "#c2d6d6",
-      headerColor: "#000",
-      rowHoverBg: "#eef4f4",
-      borderColor: "#d9e6e6",
-    },
-    Menu: {
-      darkItemBg: "#1f2d2d",
-      darkItemSelectedBg: "#c2d6d6",
-      darkItemSelectedColor: "#000",
-      darkItemHoverBg: "#b4caca",
-    },
-    Layout: {
-      siderBg: "#1f2d2d",
-      headerBg: "#ffffff",
+      headerBg: "#1E293B",
+      headerColor: "#E5E7EB",
+      rowHoverBg: "#334155",
+      borderColor: "#334155",
     },
   },
 };
+
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -1,60 +1,54 @@
+import { useMutation } from "@tanstack/react-query";
 import { axiosInstance } from "../Utils/Axios";
 
+/* ========= Types ========= */
 
 export interface RolePayload {
   role_name: string;
   permission: string[];
 }
 
-export interface Permission {
-  _id: string;
-  name: string;
-}
-
 export interface Role {
   _id: string;
   role_name: string;
-  permission: Permission[];
-  is_deleted: boolean;
-  status: boolean;
+  permission: { _id: string; name: string }[];
 }
 
-export interface RoleResponse {
-  success: boolean;
-  data: Role;
-}
+/* ========= API ========= */
 
-export interface RolesListResponse {
-  success: boolean;
-  data: Role[];
-}
-
-
-export const createRoleService = (data: RolePayload) => {
-  return axiosInstance.post<RoleResponse>("api/roles/create", data);
+export const createRole = (data: RolePayload) => {
+  return axiosInstance.post("/api/roles/create", data);
+};
+export const getRoles = async () => {
+  const res = await axiosInstance.get("/api/roles/get");
+  return res.data.data; // ✅ ONLY ARRAY
 };
 
-export const getRolesService = () => {
-  return axiosInstance.get<RolesListResponse>("api/roles/get");
+export const updateRole = (id: string, payload: RolePayload) => {
+  return axiosInstance.put(`/api/roles/update/${id}`, payload);
 };
 
-export const getRoleByIdService = (id: string) => {
-  return axiosInstance.get<RoleResponse>(`api/roles/get/${id}`);
+export const deleteRole = (id: string) => {
+  return axiosInstance.delete(`/api/roles/delete/${id}`);
 };
 
-export const updateRoleService = (
-  id: string,
-  data: RolePayload
-) => {
-  return axiosInstance.put<RoleResponse>(
-    `api/roles/update/${id}`,
-    data
-  );
-};
+/* ========= Hooks ========= */
 
+export const useCreateRole = () =>
+  useMutation({
+    mutationKey: ["createRole"],
+    mutationFn: createRole,
+  });
 
-export const deleteRoleService = (id: string) => {
-  return axiosInstance.delete<{ success: boolean; message: string }>(
-    `api/roles/delete/${id}`
-  );
-};
+export const useUpdateRole = () =>
+  useMutation({
+    mutationKey: ["updateRole"],
+    mutationFn: ({ id, data }: { id: string; data: RolePayload }) =>
+      updateRole(id, data),
+  });
+
+export const useDeleteRole = () =>
+  useMutation({
+    mutationKey: ["deleteRole"],
+    mutationFn: deleteRole,
+  });

@@ -1,176 +1,211 @@
-import React, { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, message, Spin } from "antd";
-import axios from "axios";
-import type { ColumnsType } from "antd/es/table";
+import { useState } from "react";
+import { Button, Form, Input, Modal, Select, Table } from "antd";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "react-toastify";
+
+import {
+  getRoles,
+  useCreateRole,
+  useDeleteRole,
+  useUpdateRole,
+} from "../Utils/RoleAPI";
+
+import type { Role, RolePayload } from "../Utils/RoleAPI";
 
 interface Permission {
   _id: string;
   name: string;
-  is_deleted?: boolean;
 }
 
-interface Role {
-  _id: string;
-  role_name: string;
-  permission: Permission[];
-}
+function Roles() {
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [openUpdateModal, setOpenUpdateModal] = useState(false);
+  const [roleId, setRoleId] = useState<string | null>(null);
 
-const Roles: React.FC = () => {
-  const [roles, setRoles] = useState<Role[]>([]); // always array
-  const [permissions, setPermissions] = useState<Permission[]>([]); // always array
-  const [loading, setLoading] = useState<boolean>(true);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<RolePayload>();
+  const [updateForm] = Form.useForm<RolePayload>();
 
-  // Fetch roles & permissions
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [rolesRes, permsRes] = await Promise.all([
-          axios.get<Role[]>("/api/roles"),
-          axios.get<Permission[]>("/api/permissions"),
-        ]);
+  /* ========= Query ========= */
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["getRoles"],
+    queryFn: getRoles,
+  });
 
-        // always arrays
-        setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
-        setPermissions(
-          Array.isArray(permsRes.data)
-            ? permsRes.data.filter((p) => !p.is_deleted)
-            : [],
-        );
-      } catch (err) {
-        message.error("Failed to fetch roles or permissions");
-      } finally {
-        setLoading(false);
-      }
-    };
+  /* ========= Mutations ========= */
+  const { mutate: createRole } = useCreateRole();
+  const { mutate: updateRole } = useUpdateRole();
+  const { mutate: deleteRole } = useDeleteRole();
 
-    fetchData();
-  }, []);
-
-  // Open modal for add
-  const handleAdd = () => {
-    setEditingRole(null);
-    form.resetFields();
-    setModalVisible(true);
-  };
-
-  // Open modal for edit
-  const handleEdit = (role: Role) => {
-    setEditingRole(role);
-    form.setFieldsValue({
-      role_name: role.role_name,
-      permission: role.permission?.map((p) => p._id) || [],
+  /* ========= Create ========= */
+  const onCreateFormSubmit = (values: RolePayload) => {
+    createRole(values, {
+      onSuccess(res) {
+        toast.success(res?.data?.message || "Role created");
+        form.resetFields();
+        setOpenCreateModal(false);
+        refetch();
+      },
+      onError(err: any) {
+        toast.error(err?.response?.data?.message || "Failed");
+      },
     });
-    setModalVisible(true);
   };
 
-  // Save role (create or update)
-  const handleOk = async () => {
-    try {
-      const values = await form.validateFields();
+  /* ========= Update ========= */
+  const openUpdate = (record: Role) => {
+    setRoleId(record._id);
+    updateForm.setFieldsValue({
+      role_name: record.role_name,
+      permission: record.permission.map((p) => p._id),
+    });
+    setOpenUpdateModal(true);
+  };
 
-      if (editingRole) {
-        await axios.put(`/api/roles/${editingRole._id}`, values);
-        message.success("Role updated successfully");
-      } else {
-        await axios.post("/api/roles", values);
-        message.success("Role created successfully");
+  const onUpdateFormSubmit = (values: RolePayload) => {
+    if (!roleId) return;
+
+    updateRole(
+      { id: roleId, data: values },
+      {
+        onSuccess(res) {
+          toast.success(res?.data?.message || "Updated");
+          updateForm.resetFields();
+          setOpenUpdateModal(false);
+          refetch();
+        },
+        onError(err: any) {
+          toast.error(err?.response?.data?.message || "Update failed");
+        },
       }
-
-      setModalVisible(false);
-      // Refresh roles
-      const res = await axios.get<Role[]>("/api/roles");
-      setRoles(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      message.error("Failed to save role");
-    }
+    );
   };
 
-  // Table columns
-  const columns: ColumnsType<Role> = [
-    { title: "Role Name", dataIndex: "role_name", key: "role_name" },
+  /* ========= Delete ========= */
+  const onHandleDelete = (id: string) => {
+    deleteRole(id, {
+      onSuccess(res) {
+        toast.success(res?.data?.message || "Deleted");
+        refetch();
+      },
+      onError() {
+        toast.error("Delete failed");
+      },
+    });
+  };
+
+  /* ========= Table ========= */
+  const columns = [
+    { title: "Role Name", dataIndex: "role_name" },
     {
       title: "Permissions",
       dataIndex: "permission",
-      key: "permissions",
       render: (perms: Permission[]) =>
-        Array.isArray(perms) && perms.length > 0 ? (
-          perms.map((p) => (
-            <span key={p._id} style={{ marginRight: 8 }}>
-              {p.name}
-            </span>
-          ))
-        ) : (
-          <span>No Permissions</span>
-        ),
+        perms?.map((p) => (
+          <span key={p._id} className="mr-2">
+            {p.name}
+          </span>
+        )),
     },
     {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Button type="link" onClick={() => handleEdit(record)}>
-          Edit
-        </Button>
+      title: "Action",
+      render: (_: any, record: Role) => (
+        <div className="flex space-x-3">
+          <button
+            onClick={() => onHandleDelete(record._id)}
+            className="bg-red-500 text-white px-3 py-1"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => openUpdate(record)}
+            className="bg-blue-500 text-white px-3 py-1"
+          >
+            Update
+          </button>
+        </div>
       ),
     },
   ];
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: "50px" }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
   return (
-    <div style={{ padding: "20px" }}>
-      <Button type="primary" onClick={handleAdd} style={{ marginBottom: 16 }}>
-        Add Role
-      </Button>
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Roles</h2>
+
+        <Button type="primary" onClick={() => setOpenCreateModal(true)}>
+          Add Role
+        </Button>
+      </div>
 
       <Table
-        columns={columns}
-        dataSource={roles}
         rowKey="_id"
-        pagination={{ pageSize: 5 }}
+        columns={columns}
+        dataSource={data?.data}
+        bordered
+        loading={isLoading}
       />
 
+      {/* Create */}
       <Modal
-        title={editingRole ? "Edit Role" : "Add Role"}
-        open={modalVisible}
-        onOk={handleOk}
-        onCancel={() => setModalVisible(false)}
-        destroyOnClose
+        open={openCreateModal}
+        footer={null}
+        onCancel={() => setOpenCreateModal(false)}
+        title="Create Role"
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" onFinish={onCreateFormSubmit}>
           <Form.Item
             name="role_name"
             label="Role Name"
-            rules={[{ required: true, message: "Please input role name" }]}
+            rules={[{ required: true }]}
           >
-            <Input placeholder="Enter role name" />
+            <Input />
           </Form.Item>
 
           <Form.Item
             name="permission"
             label="Permissions"
-            rules={[{ required: true, message: "Please select permissions" }]}
+            rules={[{ required: true }]}
           >
-            <Select mode="multiple" placeholder="Select permissions">
-              {permissions.map((p) => (
-                <Select.Option key={p._id} value={p._id}>
-                  {p.name}
-                </Select.Option>
-              ))}
-            </Select>
+            <Select mode="multiple" />
           </Form.Item>
+
+          <Button htmlType="submit" block>
+            Submit
+          </Button>
         </Form>
       </Modal>
-    </div>
+
+      {/* Update */}
+      <Modal
+        open={openUpdateModal}
+        footer={null}
+        onCancel={() => setOpenUpdateModal(false)}
+        title="Update Role"
+      >
+        <Form form={updateForm} layout="vertical" onFinish={onUpdateFormSubmit}>
+          <Form.Item
+            name="role_name"
+            label="Role Name"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="permission"
+            label="Permissions"
+            rules={[{ required: true }]}
+          >
+            <Select mode="multiple" />
+          </Form.Item>
+
+          <Button htmlType="submit" block>
+            Update
+          </Button>
+        </Form>
+      </Modal>
+    </>
   );
-};
+}
 
 export default Roles;

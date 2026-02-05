@@ -43,10 +43,10 @@ const App = () => {
 
   const userMenuItems = [
     {
-      key: 'profile',
-      label: 'My Profile',
-      icon: <UserOutlined />,
-    },
+  key: "profile",
+  label: <span style={{ color: "#9CA3AF" }}>My Profile</span>, // darker grey
+  icon: <UserOutlined style={{ color: "#9CA3AF" }} />,
+},
     {
       type: 'divider' as const,
     },
