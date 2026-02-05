@@ -89,59 +89,75 @@ const router = createBrowserRouter([
 const queryClient = new QueryClient();
 const theme = {
   token: {
-    colorPrimary: "#38BDF8",
+  
+    colorPrimary: "#00264d", 
+    
+    
+    colorBgLayout: "#F0F2F5",     
+    colorBgContainer: " #e6e6e6",   
 
-    // 🌑 lighter darks
-    colorBgLayout: "#0F172A",     // was #020617
-    colorBgContainer: "#1E293B",  // was #111827
+   
+    colorText: "#1F2937",         
+    colorTextSecondary: "#4B5563", 
+    colorTextHeading: "#111827",   
+    
+    
+    colorBorder: "#D1D5DB",
+    colorBorderSecondary: "#E5E7EB",
 
-    colorText: "#E5E7EB",
-    colorTextHeading: "#38BDF8",
-    colorIcon: "#94A3B8",
-    colorIconHover: "#38BDF8",
-
-    borderRadius: 10,
+    borderRadius: 4,              
     fontSize: 14,
   },
 
   components: {
-    // 📦 Modal / Form container
-    Modal: {
-      contentBg: "#0F172A",   // lighter dark
-      headerBg: "#0F172A",
-      titleColor: "#38BDF8",
-    },
-
-    // 🧾 Form labels
-    Form: {
-      labelColor: "#E5E7EB",
-      labelRequiredMarkColor: "#EF4444",
-    },
-
-    // 📝 Inputs (still light for contrast)
     Input: {
-      colorBgContainer: "#F8FAFC",   // soft white (not pure)
-      colorText: "#0F172A",
-      colorTextPlaceholder: "#64748B",
-      colorBorder: "#CBD5E1",
-      activeBorderColor: "#38BDF8",
+      colorBgContainer: "#FFFFFF",
+      colorText: "#1F2937",
+      colorTextPlaceholder: "#9CA3AF",
+      colorBorder: "#D1D5DB",
+      activeBorderColor: "#0056D2",
+      hoverBorderColor: "#9CA3AF",
     },
 
-    // 🔽 Select
+ 
     Select: {
-      colorBgContainer: "#F8FAFC",
-      colorText: "#0F172A",
-      colorBorder: "#CBD5E1",
-      optionSelectedBg: "#E0F2FE",
-      optionActiveBg: "#F1F5F9",
+      colorBgContainer: "#FFFFFF",
+      colorText: "#1F2937",
+      optionSelectedBg: "#E6F0FF", 
+      optionActiveBg: "#F3F4F6",
     },
 
-    // 📊 Table header (lighter dark)
-    Table: {
-      headerBg: "#1E293B",
-      headerColor: "#E5E7EB",
-      rowHoverBg: "#334155",
-      borderColor: "#334155",
+
+    Form: {
+      labelColor: "#374151",      
+      labelFontSize: 14,
+      verticalLabelPadding: "0 0 6px",
+    },
+
+
+   Table: {
+      headerBg: "#00264d",        
+      headerColor: "#FFFFFF",     
+      headerSortActiveBg: "#0056D2",
+      headerBorderRadius: 4,
+      borderColor: "#999999",
+    },
+  
+    Empty: {
+      colorTextDescription: "#6B7280", 
+    },
+
+  
+    Modal: {
+      contentBg: "#FFFFFF",
+      headerBg: "#FFFFFF",
+      titleColor: "#111827",
+    },
+
+
+    Button: {
+      fontWeight: 500,
+      controlHeight: 36,
     },
   },
 };
