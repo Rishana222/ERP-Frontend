@@ -89,10 +89,10 @@ const router = createBrowserRouter([
 const queryClient = new QueryClient();
 const theme = {
   token: {
-    colorPrimary: "#c2d6d6",        // main brand color
-    colorBgLayout: "#eef4f4",       // overall layout background
-    colorBgContainer: "#ffffff",    // card, content bg
-        colorText: "#5f8f8f",
+    colorPrimary: "#c2d6d6", // main brand color
+    colorBgLayout: "#eef4f4", // overall layout background
+    colorBgContainer: "#ffffff", // card, content bg
+    colorText: "#5f8f8f",
     colorTextHeading: "#5f8f8f",
     colorIcon: "#5f8f8f",
     colorIconHover: "#4f7f7f",
@@ -107,7 +107,6 @@ const theme = {
       borderRadius: 8,
       colorBgTextHover: "#f0f5f5",
       colorTextHover: "#4f7f7f",
-     
     },
     Table: {
       headerBg: "#c2d6d6",
@@ -137,5 +136,5 @@ createRoot(document.getElementById("root")!).render(
         </ConfigProvider>
       </QueryClientProvider>
     </Provider>
-  </StrictMode>
+  </StrictMode>,
 );
