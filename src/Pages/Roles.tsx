@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, Form, Input, Modal, Select, Table } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { useGetPermissions } from "../Utils/permissionsApi";
 
 import {
   getRoles,
@@ -21,6 +22,8 @@ function Roles() {
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openUpdateModal, setOpenUpdateModal] = useState(false);
   const [roleId, setRoleId] = useState<string | null>(null);
+
+  const { data: permissionsData } = useGetPermissions();
 
   const [form] = Form.useForm<RolePayload>();
   const [updateForm] = Form.useForm<RolePayload>();
@@ -109,18 +112,25 @@ function Roles() {
     {
       title: "Action",
       render: (_: any, record: Role) => (
-        <div className="flex space-x-3">
-          <button
-            onClick={() => onHandleDelete(record._id)}
-            className="bg-red-500 text-white px-3 py-1"
-          >
-            Delete
-          </button>
+        <div className="flex space-x-2">
           <button
             onClick={() => openUpdate(record)}
-            className="bg-blue-500 text-white px-3 py-1"
+            className="px-3 py-1 text-sm rounded
+               bg-[#00264d] text-white
+               hover:bg-[#003a73]
+               transition"
           >
-            Update
+            Edit
+          </button>
+
+          <button
+            onClick={() => onHandleDelete(record._id)}
+            className="px-3 py-1 text-sm rounded
+               bg-[#b91c1c] text-white
+               hover:bg-[#991b1b]
+               transition"
+          >
+            Delete
           </button>
         </div>
       ),
@@ -140,9 +150,10 @@ function Roles() {
       <Table
         rowKey="_id"
         columns={columns}
-        dataSource={data?.data}
+        dataSource={data} // ✅ correct
         bordered
         loading={isLoading}
+        className="erp-table"
       />
 
       {/* Create */}
@@ -166,7 +177,14 @@ function Roles() {
             label="Permissions"
             rules={[{ required: true }]}
           >
-            <Select mode="multiple" />
+            <Select
+              mode="multiple"
+              placeholder="Select permissions"
+              options={permissionsData?.map((p) => ({
+                value: p._id,
+                label: p.name.toUpperCase(),
+              }))}
+            />
           </Form.Item>
 
           <Button htmlType="submit" block>
@@ -196,7 +214,14 @@ function Roles() {
             label="Permissions"
             rules={[{ required: true }]}
           >
-            <Select mode="multiple" />
+            <Select
+              mode="multiple"
+              placeholder="Select permissions"
+              options={permissionsData?.map((p) => ({
+                value: p._id,
+                label: p.name.toUpperCase(),
+              }))}
+            />
           </Form.Item>
 
           <Button htmlType="submit" block>

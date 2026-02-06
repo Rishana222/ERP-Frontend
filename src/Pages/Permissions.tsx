@@ -1,127 +1,177 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Table, Button, Modal, Form, Select, Tag, message, Popconfirm, Space } from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { getPermissions, createPermission, updatePermission, deletePermission } from "../Utils/permissionsApi";
+import { Button, Modal, Form, Select, Table, Tag, Popconfirm } from "antd";
+import { useState } from "react";
+import { toast } from "react-toastify";
 
-const ERP_ACCESSES = ["users","products","purchase","sales","stock","accounts","reports","vendors","customers"];
+import {
+  useGetPermissions,
+  useCreatePermission,
+  useUpdatePermission,
+  useDeletePermission,
+} from "../Utils/permissionsApi";
+import type { Permission, PermissionPayload } from "../Utils/permissionsApi";
 
-interface Permission {
-  _id: string;
-  name: string;
-  is_deleted: boolean;
-}
+const ERP_ACCESSES = [
+  "users",
+  "roles",
+  "products",
+  "purchase",
+  "sales",
+  "stock",
+  "accounts",
+  "reports",
+  "vendors",
+  "customers",
+];
 
-const Permissions: React.FC = () => {
-  const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
+const Permissions = () => {
+  const [openModal, setOpenModal] = useState(false);
+  const [editingPermission, setEditingPermission] = useState<Permission | null>(
+    null,
+  );
 
-  const fetchPermissions = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getPermissions();
-      setPermissions(data);
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Failed to fetch permissions");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [form] = Form.useForm<PermissionPayload>();
 
-  useEffect(() => {
-    fetchPermissions();
-  }, [fetchPermissions]);
+  /* ========= QUERY ========= */
+  const { data: permissions, isLoading, refetch } = useGetPermissions();
 
-  const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      setLoading(true);
+  /* ========= MUTATIONS ========= */
+  const { mutate: createPermission } = useCreatePermission();
+  const { mutate: updatePermission } = useUpdatePermission();
+  const { mutate: deletePermission } = useDeletePermission();
 
-      if (editingPermission) {
-        await updatePermission(editingPermission._id, values);
-        message.success("Permission updated successfully");
-      } else {
-        await createPermission(values);
-        message.success("Permission added successfully");
-      }
-
-      setModalVisible(false);
-      form.resetFields();
-      fetchPermissions();
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Operation failed");
-    } finally {
-      setLoading(false);
+  /* ========= SAVE ========= */
+  const handleSave = (values: PermissionPayload) => {
+    if (editingPermission) {
+      updatePermission(
+        { id: editingPermission._id, data: values },
+        {
+          onSuccess() {
+            toast.success("Permission updated");
+            closeModal();
+            refetch();
+          },
+          onError(err: any) {
+            toast.error(err?.response?.data?.message || "Update failed");
+          },
+        },
+      );
+    } else {
+      createPermission(values, {
+        onSuccess() {
+          toast.success("Permission created");
+          closeModal();
+          refetch();
+        },
+        onError(err: any) {
+          toast.error(err?.response?.data?.message || "Create failed");
+        },
+      });
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deletePermission(id);
-      message.success("Permission deleted");
-      fetchPermissions();
-    } catch {
-      message.error("Delete failed");
-    }
+  /* ========= DELETE ========= */
+  const handleDelete = (id: string) => {
+    deletePermission(id, {
+      onSuccess() {
+        toast.success("Permission deleted");
+        refetch();
+      },
+      onError() {
+        toast.error("Delete failed");
+      },
+    });
   };
 
-  const columns: ColumnsType<Permission> = [
+  const closeModal = () => {
+    setOpenModal(false);
+    setEditingPermission(null);
+    form.resetFields();
+  };
+
+  /* ========= TABLE ========= */
+  const columns = [
     {
-      title: "Permission Name",
+      title: "Permission",
       dataIndex: "name",
-      key: "name",
-      render: (name: string) => <Tag color="blue">{name.toUpperCase()}</Tag>,
-    },
-    {
-      title: "Status",
-      dataIndex: "is_deleted",
-      key: "status",
-      render: (deleted: boolean) => (
-        <Tag color={deleted ? "red" : "green"}>
-          {deleted ? "Deleted" : "Active"}
+      render: (name: string) => (
+        <Tag
+          color="blue"
+          style={{
+            backgroundColor: "#E6F0FF",
+            color: "#00264d",
+
+            fontWeight: "500",
+          }}
+        >
+          {name.toUpperCase()}
         </Tag>
       ),
     },
     {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
+      title: "Status",
+      dataIndex: "is_deleted",
+      render: (deleted: boolean) => (
+        <Tag
+          style={{
+            borderRadius: "4px",
+            fontWeight: "600",
+
+            color: deleted ? "#cf1322" : "#00264d",
+          }}
+        >
+          {deleted ? "DELETED" : "ACTIVE"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Action",
+      render: (_: any, record: Permission) => (
+        <div className="flex space-x-2">
+          {/* UPDATE */}
+          <button
             onClick={() => {
               setEditingPermission(record);
               form.setFieldsValue({ name: record.name });
-              setModalVisible(true);
+              setOpenModal(true);
             }}
+            className="px-3 py-1 text-sm rounded
+                   bg-[#00264d] text-white
+                   hover:bg-[#003a73]
+                   transition"
           >
-            Edit
-          </Button>
+            Update
+          </button>
+
+          {/* DELETE */}
           <Popconfirm
             title="Are you sure?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <Button type="link" danger>
+            <button
+              className="px-3 py-1 text-sm rounded
+                       bg-[#b91c1c] text-white
+                       hover:bg-[#991b1b]
+                       transition"
+            >
               Delete
-            </Button>
+            </button>
           </Popconfirm>
-        </Space>
+        </div>
       ),
     },
   ];
 
   return (
-    <div style={{ padding: "24px" }}>
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between" }}>
-        <h2>Manage Permissions</h2>
+    <>
+      <div className="flex justify-between mb-4">
+        <h2 className="text-xl font-semibold">Permissions</h2>
+
         <Button
           type="primary"
           onClick={() => {
-            setEditingPermission(null);
             form.resetFields();
-            setModalVisible(true);
+            setEditingPermission(null);
+            setOpenModal(true);
           }}
         >
           Add Permission
@@ -129,37 +179,37 @@ const Permissions: React.FC = () => {
       </div>
 
       <Table
-        loading={loading}
+        rowKey="_id"
         columns={columns}
         dataSource={permissions}
-        rowKey="_id"
-        pagination={{ pageSize: 10 }}
+        loading={isLoading}
+        bordered
+        className="erp-table"
       />
 
       <Modal
-        title={editingPermission ? "Edit Permission" : "Add Permission"}
-        open={modalVisible}
-        onOk={handleSave}
-        onCancel={() => setModalVisible(false)}
-        confirmLoading={loading}
+        open={openModal}
+        title={editingPermission ? "Edit Permission" : "Create Permission"}
+        onCancel={closeModal}
+        onOk={() => form.submit()}
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item
             name="name"
             label="Permission Name"
-            rules={[{ required: true, message: "Please select an access type" }]}
+            rules={[{ required: true, message: "Select permission" }]}
           >
-            <Select placeholder="Select access type">
-              {ERP_ACCESSES.map((access) => (
-                <Select.Option key={access} value={access}>
-                  {access.toUpperCase()}
+            <Select placeholder="Select permission">
+              {ERP_ACCESSES.map((p) => (
+                <Select.Option key={p} value={p}>
+                  {p.toUpperCase()}
                 </Select.Option>
               ))}
             </Select>
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 
