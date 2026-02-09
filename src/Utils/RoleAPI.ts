@@ -14,6 +14,18 @@ export interface Role {
   permission: { _id: string; name: string }[];
 }
 
+export interface RolePayload {
+  role_name: string;
+  description?: string;
+  status?: boolean;
+}
+
+export interface Role {
+  _id: string;
+  role_name: string;
+  description?: string;
+  status: boolean;
+}
 /* ========= API ========= */
 
 export const createRole = (data: RolePayload) => {

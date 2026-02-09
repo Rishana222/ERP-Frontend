@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 .erp-table .ant-table-tbody > tr > td {
-  font-size: 18px;        
+  font-size: 15px;        
   font-weight: 500;      
   color: #1f2937;
 }

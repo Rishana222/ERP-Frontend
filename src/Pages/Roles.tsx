@@ -1,137 +1,140 @@
 import { useState } from "react";
-import { Button, Form, Input, Modal, Select, Table } from "antd";
-import { useQuery } from "@tanstack/react-query";
+import { Button, Form, Input, Modal, Switch, Table,  Popconfirm } from "antd";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { useGetPermissions } from "../Utils/permissionsApi";
+import { axiosInstance } from "../Utils/Axios";
 
-import {
-  getRoles,
-  useCreateRole,
-  useDeleteRole,
-  useUpdateRole,
-} from "../Utils/RoleAPI";
-
-import type { Role, RolePayload } from "../Utils/RoleAPI";
-
-interface Permission {
+interface Role {
   _id: string;
-  name: string;
+  role_name: string;
+  description?: string;
+  status: boolean;
+  is_deleted?: boolean;
 }
 
+interface RolePayload {
+  role_name: string;
+  description?: string;
+  status?: boolean;
+}
+
+const getRoles = async (): Promise<Role[]> => {
+  const res = await axiosInstance.get("/api/roles/get");
+  return res.data.data;
+};
+
+const createRole = (data: RolePayload) =>
+  axiosInstance.post("/api/roles/create", data);
+
+const updateRole = ({ id, data }: { id: string; data: RolePayload }) =>
+  axiosInstance.put(`/api/roles/update/${id}`, data);
+
+const deleteRole = (id: string) => axiosInstance.delete(`/api/roles/delete/${id}`);
+
 function Roles() {
-  const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [openUpdateModal, setOpenUpdateModal] = useState(false);
-  const [roleId, setRoleId] = useState<string | null>(null);
-
-  const { data: permissionsData } = useGetPermissions();
-
+  const [openModal, setOpenModal] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [form] = Form.useForm<RolePayload>();
-  const [updateForm] = Form.useForm<RolePayload>();
 
-  /* ========= Query ========= */
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["getRoles"],
+    queryKey: ["roles"],
     queryFn: getRoles,
   });
 
-  /* ========= Mutations ========= */
-  const { mutate: createRole } = useCreateRole();
-  const { mutate: updateRole } = useUpdateRole();
-  const { mutate: deleteRole } = useDeleteRole();
+  const createMutation = useMutation({ mutationFn: createRole });
+  const updateMutation = useMutation({ mutationFn: updateRole });
+  const deleteMutation = useMutation({ mutationFn: deleteRole });
 
-  /* ========= Create ========= */
-  const onCreateFormSubmit = (values: RolePayload) => {
-    createRole(values, {
-      onSuccess(res) {
-        toast.success(res?.data?.message || "Role created");
-        form.resetFields();
-        setOpenCreateModal(false);
-        refetch();
-      },
-      onError(err: any) {
-        toast.error(err?.response?.data?.message || "Failed");
-      },
-    });
-  };
-
-  /* ========= Update ========= */
-  const openUpdate = (record: Role) => {
-    setRoleId(record._id);
-    updateForm.setFieldsValue({
-      role_name: record.role_name,
-      permission: record.permission.map((p) => p._id),
-    });
-    setOpenUpdateModal(true);
-  };
-
-  const onUpdateFormSubmit = (values: RolePayload) => {
-    if (!roleId) return;
-
-    updateRole(
-      { id: roleId, data: values },
-      {
-        onSuccess(res) {
-          toast.success(res?.data?.message || "Updated");
-          updateForm.resetFields();
-          setOpenUpdateModal(false);
+  const handleSave = (values: RolePayload) => {
+    if (editingRole) {
+      updateMutation.mutate(
+        { id: editingRole._id, data: values },
+        {
+          onSuccess() {
+            toast.success("Role updated");
+            closeModal();
+            refetch();
+          },
+          onError: (err: any) =>
+            toast.error(err?.response?.data?.message || "Update failed"),
+        }
+      );
+    } else {
+      createMutation.mutate(values, {
+        onSuccess() {
+          toast.success("Role created");
+          closeModal();
           refetch();
         },
-        onError(err: any) {
-          toast.error(err?.response?.data?.message || "Update failed");
-        },
-      }
-    );
+        onError: (err: any) =>
+          toast.error(err?.response?.data?.message || "Create failed"),
+      });
+    }
   };
 
-  /* ========= Delete ========= */
-  const onHandleDelete = (id: string) => {
-    deleteRole(id, {
-      onSuccess(res) {
-        toast.success(res?.data?.message || "Deleted");
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess() {
+        toast.success("Role deleted");
         refetch();
       },
-      onError() {
-        toast.error("Delete failed");
-      },
+      onError: () => toast.error("Delete failed"),
     });
   };
 
-  /* ========= Table ========= */
+  const closeModal = () => {
+    setOpenModal(false);
+    setEditingRole(null);
+    form.resetFields();
+  };
+
   const columns = [
-    { title: "Role Name", dataIndex: "role_name" },
     {
-      title: "Permissions",
-      dataIndex: "permission",
-      render: (perms: Permission[]) =>
-        perms?.map((p) => (
-          <span key={p._id} className="mr-2">
-            {p.name}
-          </span>
-        )),
+      title: "Role Name",
+      dataIndex: "role_name",
+      render: (name: string) => (
+        <span style={{ fontWeight: "500", color: "#00264d" }}>
+          {name.toUpperCase()}
+        </span>
+      ),
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      render: (v: string) => <span className="text-gray-600">{v || "-"}</span>,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      render: (status: boolean) => (
+        <span style={{ 
+          fontWeight: "600", 
+          color: status ? "#00264d" : "#cf1322" 
+        }}>
+          {status ? "ACTIVE" : "INACTIVE"}
+        </span>
+      ),
     },
     {
       title: "Action",
       render: (_: any, record: Role) => (
         <div className="flex space-x-2">
           <button
-            onClick={() => openUpdate(record)}
-            className="px-3 py-1 text-sm rounded
-               bg-[#00264d] text-white
-               hover:bg-[#003a73]
-               transition"
+            onClick={() => {
+              setEditingRole(record);
+              form.setFieldsValue(record);
+              setOpenModal(true);
+            }}
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#003a73] transition"
           >
             Edit
           </button>
 
-          <button
-            onClick={() => onHandleDelete(record._id)}
-            className="px-3 py-1 text-sm rounded
-               bg-[#b91c1c] text-white
-               hover:bg-[#991b1b]
-               transition"
-          >
-            Delete
-          </button>
+          <Popconfirm title="Are you sure?" onConfirm={() => handleDelete(record._id)}>
+            <button className="px-3 py-1 text-sm rounded bg-[#b91c1c] text-white hover:bg-[#991b1b] transition">
+              Delete
+            </button>
+          </Popconfirm>
         </div>
       ),
     },
@@ -141,8 +144,14 @@ function Roles() {
     <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Roles</h2>
-
-        <Button type="primary" onClick={() => setOpenCreateModal(true)}>
+        <Button
+          type="primary"
+          onClick={() => {
+            form.resetFields();
+            setEditingRole(null);
+            setOpenModal(true);
+          }}
+        >
           Add Role
         </Button>
       </div>
@@ -150,83 +159,36 @@ function Roles() {
       <Table
         rowKey="_id"
         columns={columns}
-        dataSource={data} // ✅ correct
-        bordered
+        dataSource={data}
         loading={isLoading}
+        bordered
         className="erp-table"
       />
 
-      {/* Create */}
       <Modal
-        open={openCreateModal}
-        footer={null}
-        onCancel={() => setOpenCreateModal(false)}
-        title="Create Role"
+        open={openModal}
+        title={editingRole ? "Edit Role" : "Create Role"}
+        onCancel={closeModal}
+        onOk={() => form.submit()}
       >
-        <Form form={form} layout="vertical" onFinish={onCreateFormSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item
             name="role_name"
             label="Role Name"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Please enter role name" }]}
           >
-            <Input />
+            <Input placeholder="Enter role name" />
           </Form.Item>
 
-          <Form.Item
-            name="permission"
-            label="Permissions"
-            rules={[{ required: true }]}
-          >
-            <Select
-              mode="multiple"
-              placeholder="Select permissions"
-              options={permissionsData?.map((p) => ({
-                value: p._id,
-                label: p.name.toUpperCase(),
-              }))}
-            />
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={3} placeholder="Enter description" />
           </Form.Item>
 
-          <Button htmlType="submit" block>
-            Submit
-          </Button>
-        </Form>
-      </Modal>
-
-      {/* Update */}
-      <Modal
-        open={openUpdateModal}
-        footer={null}
-        onCancel={() => setOpenUpdateModal(false)}
-        title="Update Role"
-      >
-        <Form form={updateForm} layout="vertical" onFinish={onUpdateFormSubmit}>
-          <Form.Item
-            name="role_name"
-            label="Role Name"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            name="permission"
-            label="Permissions"
-            rules={[{ required: true }]}
-          >
-            <Select
-              mode="multiple"
-              placeholder="Select permissions"
-              options={permissionsData?.map((p) => ({
-                value: p._id,
-                label: p.name.toUpperCase(),
-              }))}
-            />
-          </Form.Item>
-
-          <Button htmlType="submit" block>
-            Update
-          </Button>
+          {editingRole && (
+            <Form.Item name="status" label="Status" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+          )}
         </Form>
       </Modal>
     </>
