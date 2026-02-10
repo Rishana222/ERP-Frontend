@@ -1,207 +1,139 @@
 import React, { useState, useEffect } from "react";
-import {
-  CheckCircle2,
-  XCircle,
-  ChevronDown,
-  Loader2,
-  ShieldCheck,
-} from "lucide-react";
+import { CheckCircle2, ChevronDown, Loader2, ShieldCheck, AlertCircle } from "lucide-react";
 
-// Fixed ERP Modules List
+interface RoleData { _id: string; role_name: string; }
+interface PermissionRow { moduleId: string; moduleName: string; view: boolean; create: boolean; edit: boolean; delete: boolean; }
+
 const ERP_MODULES = [
-  { id: "m1", name: "User Management" },
-  { id: "m2", name: "Human Resource" },
-  { id: "m3", name: "Sales & Marketing" },
-  { id: "m4", name: "Inventory & Stock" },
-  { id: "m5", name: "Finance & Accounts" },
-  { id: "m6", name: "Purchase Management" },
+  { id: "m1", name: "User Management" }, { id: "m2", name: "Human Resource" },
+  { id: "m3", name: "Sales & Marketing" }, { id: "m4", name: "Inventory & Stock" },
+  { id: "m5", name: "Finance & Accounts" }, { id: "m6", name: "Purchase Management" },
   { id: "m7", name: "Client Management" },
 ];
 
-interface PermissionRow {
-  moduleId: string;
-  moduleName: string;
-  view: boolean;
-  create: boolean;
-  edit: boolean;
-  delete: boolean;
-}
-
-// Role interface with ID for reference
-interface RoleData {
-  _id: string;
-  roleName: string;
-}
-
 const PermissionManager = () => {
-  // 1. roleName-ന് പകരം selectedRoleId സ്റ്റോർ ചെയ്യുന്നു
-  const [selectedRoleId, setSelectedRoleId] = useState<string>("r1");
+  const [roles, setRoles] = useState<RoleData[]>([]);
+  const [selectedRoleId, setSelectedRoleId] = useState("");
   const [permissions, setPermissions] = useState<PermissionRow[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // 2. Roles with unique IDs (Reference Data)
-  const roles: RoleData[] = [
-    { _id: "r1", roleName: "Admin" },
-    { _id: "r2", roleName: "Project Manager" },
-    { _id: "r3", roleName: "Accountant" },
-    { _id: "r4", roleName: "Sales Executive" },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadRolePermissions = async () => {
+    setPermissions(ERP_MODULES.map(mod => ({ moduleId: mod.id, moduleName: mod.name, view: false, create: false, edit: false, delete: false })));
+    fetchRoles();
+  }, []);
+
+  const fetchRoles = async () => {
+    try {
       setLoading(true);
+      setError(null);
+      
+      const storedAuth = localStorage.getItem("userInfo");
+      const userInfo = storedAuth ? JSON.parse(storedAuth) : null;
+      const token = userInfo?.token;
 
-      // ഇവിടേയ്ക്ക് ബാക്കെൻഡിൽ നിന്ന് ഈ പ്രത്യേക roleId-യുടെ ഡാറ്റ എടുക്കാം
-      // Example: const res = await fetch(`/api/permissions/${selectedRoleId}`);
+      if (!token) {
+        setError("Session expired. Please login again.");
+        return;
+      }
 
-      const defaultData: PermissionRow[] = ERP_MODULES.map((mod) => ({
-        moduleId: mod.id,
-        moduleName: mod.name,
-        // Admin (r1) ആണെങ്കിൽ മാത്രം default view true നൽകുന്നു
-        view: selectedRoleId === "r1",
-        create: false,
-        edit: false,
-        delete: false,
-      }));
+      const response = await fetch("http://localhost:3000/api/roles/get", {
+        method: "GET",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      });
 
-      setTimeout(() => {
-        setPermissions(defaultData);
-        setLoading(false);
-      }, 500);
-    };
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setRoles(result.data);
+        if (result.data.length > 0) setSelectedRoleId(result.data[0]._id);
+      } else {
+        setError(result.message || "Failed to load roles.");
+      }
+    } catch (err) {
+      setError("Server connection failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadRolePermissions();
-  }, [selectedRoleId]); // selectedRoleId മാറുമ്പോൾ മാത്രം ഫെച്ച് ചെയ്യും
-
-  const togglePermission = (
-    moduleId: string,
-    field: keyof Omit<PermissionRow, "moduleId" | "moduleName">,
-  ) => {
-    setPermissions((prev) =>
-      prev.map((row) =>
-        row.moduleId === moduleId ? { ...row, [field]: !row[field] } : row,
-      ),
-    );
+  const togglePermission = (moduleId: string, field: keyof Omit<PermissionRow, "moduleId" | "moduleName">) => {
+    setPermissions(prev => prev.map(row => row.moduleId === moduleId ? { ...row, [field]: !row[field] } : row));
   };
 
   const handleSave = async () => {
-    // 3. സേവ് ചെയ്യുമ്പോൾ Role-ന്റെ പേരിന് പകരം ID (Ref) അയക്കുന്നു
-    const payload = {
-      roleRef: selectedRoleId,
-      access: permissions,
-    };
-    console.log("Saving ERP Access Data for Role ID:", payload);
+    if (!selectedRoleId) return;
+    try {
+      setSaving(true);
+      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      const token = userInfo.token;
 
-    const currentRoleName = roles.find(
-      (r) => r._id === selectedRoleId,
-    )?.roleName;
-    alert(
-      `Permissions for ${currentRoleName} updated using ID: ${selectedRoleId}`,
-    );
+      const response = await fetch("http://localhost:3000/api/permissions/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ roleId: selectedRoleId, access: permissions }),
+      });
+
+      const result = await response.json();
+      if (result.success) alert("Permissions saved!");
+      else alert(result.message || "Save failed.");
+    } catch (error) {
+      alert("Error saving permissions.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12 flex justify-center font-sans">
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-        {/* Header Section */}
-        <div className="p-8 border-b bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <ShieldCheck className="text-blue-600" /> ERP Access Control
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Manage module-wise permissions with Role Reference
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <label className="font-semibold text-gray-600">Select Role:</label>
-            <div className="relative">
-              <select
-                value={selectedRoleId}
-                onChange={(e) => setSelectedRoleId(e.target.value)}
-                className="appearance-none border-2 border-gray-100 rounded-xl px-5 py-2.5 pr-12 bg-gray-50 focus:border-blue-500 focus:bg-white outline-none transition-all font-medium text-gray-700 cursor-pointer"
-              >
-                {/* 4. Display roleName, but value is roleId (_id) */}
-                {roles.map((role) => (
-                  <option key={role._id} value={role._id}>
-                    {role.roleName}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-4 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" />
-            </div>
+    <div className="min-h-screen bg-slate-50 p-6 flex justify-center font-sans">
+      <div className="w-full max-w-6xl bg-white rounded-3xl shadow-xl border overflow-hidden">
+        <div className="p-8 border-b flex justify-between items-center bg-white">
+          <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3">
+            <ShieldCheck className="text-indigo-600 w-9 h-9" /> Role Access
+          </h2>
+          <div className="relative min-w-[280px]">
+            <select value={selectedRoleId} onChange={(e) => setSelectedRoleId(e.target.value)} className="w-full border-2 rounded-2xl px-6 py-4 bg-slate-50 font-bold outline-none focus:border-indigo-500 appearance-none">
+              {roles.length > 0 ? roles.map(r => <option key={r._id} value={r._id}>{r.role_name}</option>) : <option>No roles found</option>}
+            </select>
+            <ChevronDown className="absolute right-5 top-5 w-5 h-5 text-slate-400" />
           </div>
         </div>
 
-        {/* Content Section */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="animate-spin text-blue-500 w-10 h-10" />
-            <p className="text-gray-400 font-medium">Loading Access Map...</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
+        <div className="p-4">
+          {loading ? (
+            <div className="flex flex-col items-center py-20 text-indigo-600"><Loader2 className="animate-spin w-12 h-12 mb-4" /><p className="font-bold">Loading roles...</p></div>
+          ) : error ? (
+            <div className="flex flex-col items-center py-20 text-red-500 font-bold"><AlertCircle className="w-12 h-12 mb-4" />{error}</div>
+          ) : (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wider">
-                  <th className="px-8 py-5 font-bold">Module Model</th>
-                  <th className="px-6 py-5 text-center font-bold">View</th>
-                  <th className="px-6 py-5 text-center font-bold">Create</th>
-                  <th className="px-6 py-5 text-center font-bold">Edit</th>
-                  <th className="px-6 py-5 text-center font-bold">Delete</th>
+                <tr className="bg-slate-50 text-slate-400 text-[11px] uppercase tracking-widest font-black">
+                  <th className="px-10 py-6">Module Name</th>
+                  {["View", "Create", "Edit", "Delete"].map(h => <th key={h} className="px-6 py-6 text-center">{h}</th>)}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {permissions.map((row) => (
-                  <tr
-                    key={row.moduleId}
-                    className="hover:bg-blue-50/40 transition-colors group"
-                  >
-                    <td className="px-8 py-5">
-                      <span className="font-semibold text-gray-700 group-hover:text-blue-700 transition-colors">
-                        {row.moduleName}
-                      </span>
-                    </td>
-
-                    {(["view", "create", "edit", "delete"] as const).map(
-                      (action) => (
-                        <td key={action} className="px-6 py-5 text-center">
-                          <button
-                            onClick={() =>
-                              togglePermission(row.moduleId, action)
-                            }
-                            className="transform active:scale-90 transition-transform"
-                          >
-                            {row[action] ? (
-                              <CheckCircle2
-                                className="text-green-500 w-6 h-6 mx-auto"
-                                strokeWidth={2.5}
-                              />
-                            ) : (
-                              <XCircle
-                                className="text-gray-200 group-hover:text-red-200 w-6 h-6 mx-auto"
-                                strokeWidth={2.5}
-                              />
-                            )}
-                          </button>
-                        </td>
-                      ),
-                    )}
+              <tbody className="divide-y divide-slate-100">
+                {permissions.map(row => (
+                  <tr key={row.moduleId} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-10 py-6 font-bold text-slate-700">{row.moduleName}</td>
+                    {(["view", "create", "edit", "delete"] as const).map(action => (
+                      <td key={action} className="px-6 py-6 text-center">
+                        <button onClick={() => togglePermission(row.moduleId, action)}>
+                          <CheckCircle2 className={`w-7 h-7 mx-auto ${row[action] ? "text-emerald-500" : "text-slate-200"}`} />
+                        </button>
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
+          )}
+        </div>
 
-        <div className="p-8 bg-gray-50/50 flex justify-end border-t border-gray-100">
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 active:translate-y-0"
-          >
-            Update Role Permissions
+        <div className="p-8 border-t bg-slate-50/30 flex justify-between items-center">
+          <p className="font-bold text-slate-500">Selected Role: <span className="text-indigo-600">{roles.find(r => r._id === selectedRoleId)?.role_name || "N/A"}</span></p>
+          <button onClick={handleSave} disabled={saving || loading} className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4 rounded-2xl font-black shadow-lg flex items-center gap-3 transition-all active:scale-95">
+            {saving ? <Loader2 className="animate-spin w-5 h-5" /> : "Save Changes"}
           </button>
         </div>
       </div>
