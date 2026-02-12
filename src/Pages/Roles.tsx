@@ -1,137 +1,125 @@
 import { useState } from "react";
-import { Button, Form, Input, Modal, Switch, Table,  Popconfirm } from "antd";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { toast } from "react-toastify";
-import { axiosInstance } from "../Utils/Axios";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Popconfirm,
+  message,
+  Tag,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
 
-interface Role {
+import {
+  useGetRoles,
+  useCreateRole,
+  useUpdateRole,
+  useDeleteRole,
+} from "../Utils/RoleAPI";
+import type { Role, RolePayload } from "../Utils/RoleAPI";
+import { useGetPermissions } from "../Utils/permissionsApi"
+
+interface Permission {
   _id: string;
-  role_name: string;
-  description?: string;
-  status: boolean;
-  is_deleted?: boolean;
+  name: string;
 }
 
-interface RolePayload {
-  role_name: string;
-  description?: string;
-  status?: boolean;
-}
-
-const getRoles = async (): Promise<Role[]> => {
-  const res = await axiosInstance.get("/api/roles/get");
-  return res.data.data;
-};
-
-const createRole = (data: RolePayload) =>
-  axiosInstance.post("/api/roles/create", data);
-
-const updateRole = ({ id, data }: { id: string; data: RolePayload }) =>
-  axiosInstance.put(`/api/roles/update/${id}`, data);
-
-const deleteRole = (id: string) => axiosInstance.delete(`/api/roles/delete/${id}`);
-
-function Roles() {
-  const [openModal, setOpenModal] = useState(false);
+const RolePage = () => {
+  const [open, setOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [form] = Form.useForm<RolePayload>();
+  const [form] = Form.useForm();
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["roles"],
-    queryFn: getRoles,
-  });
 
-  const createMutation = useMutation({ mutationFn: createRole });
-  const updateMutation = useMutation({ mutationFn: updateRole });
-  const deleteMutation = useMutation({ mutationFn: deleteRole });
 
-  const handleSave = (values: RolePayload) => {
-    if (editingRole) {
-      updateMutation.mutate(
-        { id: editingRole._id, data: values },
-        {
-          onSuccess() {
-            toast.success("Role updated");
-            closeModal();
-            refetch();
-          },
-          onError: (err: any) =>
-            toast.error(err?.response?.data?.message || "Update failed"),
-        }
-      );
-    } else {
-      createMutation.mutate(values, {
-        onSuccess() {
-          toast.success("Role created");
-          closeModal();
-          refetch();
-        },
-        onError: (err: any) =>
-          toast.error(err?.response?.data?.message || "Create failed"),
-      });
+  const { data: roles = [], isLoading } = useGetRoles();
+
+  const { data: permissions = [] } = useGetPermissions();
+
+
+
+  const createRole = useCreateRole();
+  const updateRole = useUpdateRole();
+  const deleteRole = useDeleteRole();
+
+
+
+  const handleSubmit = async (values: RolePayload) => {
+    try {
+      if (editingRole) {
+        await updateRole.mutateAsync({
+          id: editingRole._id,
+          data: values,
+        });
+        message.success("Role updated successfully");
+      } else {
+        await createRole.mutateAsync(values);
+        message.success("Role created successfully");
+      }
+
+      setOpen(false);
+      form.resetFields();
+      setEditingRole(null);
+    } catch (error) {
+      message.error("Something went wrong");
     }
   };
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id, {
-      onSuccess() {
-        toast.success("Role deleted");
-        refetch();
-      },
-      onError: () => toast.error("Delete failed"),
+  const handleEdit = (role: Role) => {
+    setEditingRole(role);
+    setOpen(true);
+
+    form.setFieldsValue({
+      name: role.name,
+      permissions: role.permissions,
     });
   };
 
-  const closeModal = () => {
-    setOpenModal(false);
-    setEditingRole(null);
-    form.resetFields();
+  const handleDelete = async (id: string) => {
+    await deleteRole.mutateAsync(id);
+    message.success("Role deleted");
   };
 
-  const columns = [
+
+
+  const columns: ColumnsType<Role> = [
     {
       title: "Role Name",
-      dataIndex: "role_name",
-      render: (name: string) => (
-        <span style={{ fontWeight: "500", color: "#00264d" }}>
-          {name.toUpperCase()}
-        </span>
-      ),
+      dataIndex: "name",
     },
     {
-      title: "Description",
-      dataIndex: "description",
-      render: (v: string) => <span className="text-gray-600">{v || "-"}</span>,
-    },
+  title: "Permissions",
+  render: (_, record) => {
+    if (!record.permissions || record.permissions.length === 0)
+      return "No Permissions";
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {record.permissions.map((perm: any) => (
+          <Tag key={perm._id}>{perm.name}</Tag>
+        ))}
+      </div>
+    );
+  },
+},
+
     {
-      title: "Status",
-      dataIndex: "status",
-      render: (status: boolean) => (
-        <span style={{ 
-          fontWeight: "600", 
-          color: status ? "#00264d" : "#cf1322" 
-        }}>
-          {status ? "ACTIVE" : "INACTIVE"}
-        </span>
-      ),
-    },
-    {
-      title: "Action",
-      render: (_: any, record: Role) => (
-        <div className="flex space-x-2">
+      title: "Actions",
+      render: (_, record) => (
+        <div className="flex gap-2">
           <button
-            onClick={() => {
-              setEditingRole(record);
-              form.setFieldsValue(record);
-              setOpenModal(true);
-            }}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#003a73] transition"
+            onClick={() => handleEdit(record)}
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white"
           >
             Edit
           </button>
 
-          <Popconfirm title="Are you sure?" onConfirm={() => handleDelete(record._id)}>
-            <button className="px-3 py-1 text-sm rounded bg-[#b91c1c] text-white hover:bg-[#991b1b] transition">
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
               Delete
             </button>
           </Popconfirm>
@@ -140,6 +128,8 @@ function Roles() {
     },
   ];
 
+
+
   return (
     <>
       <div className="flex justify-between items-center mb-4">
@@ -147,9 +137,8 @@ function Roles() {
         <Button
           type="primary"
           onClick={() => {
-            form.resetFields();
+            setOpen(true);
             setEditingRole(null);
-            setOpenModal(true);
           }}
         >
           Add Role
@@ -157,42 +146,49 @@ function Roles() {
       </div>
 
       <Table
-        rowKey="_id"
         columns={columns}
-        dataSource={data}
+        dataSource={roles}
+        rowKey="_id"
         loading={isLoading}
         bordered
         className="erp-table"
       />
 
       <Modal
-        open={openModal}
-        title={editingRole ? "Edit Role" : "Create Role"}
-        onCancel={closeModal}
+        title={editingRole ? "Edit Role" : "Add Role"}
+        open={open}
+        onCancel={() => {
+          setOpen(false);
+          form.resetFields();
+        }}
         onOk={() => form.submit()}
+        confirmLoading={
+          createRole.isPending || updateRole.isPending
+        }
       >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            name="role_name"
+            name="name"
             label="Role Name"
-            rules={[{ required: true, message: "Please enter role name" }]}
+            rules={[{ required: true, message: "Role name required" }]}
           >
-            <Input placeholder="Enter role name" />
+            <Input />
           </Form.Item>
 
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} placeholder="Enter description" />
+          <Form.Item name="permissions" label="Permissions">
+            <Select
+              mode="multiple"
+              placeholder="Select permissions"
+              options={permissions.map((p: Permission) => ({
+                label: p.name,
+                value: p._id,
+              }))}
+            />
           </Form.Item>
-
-          {editingRole && (
-            <Form.Item name="status" label="Status" valuePropName="checked">
-              <Switch />
-            </Form.Item>
-          )}
         </Form>
       </Modal>
     </>
   );
-}
+};
 
-export default Roles;
+export default RolePage;

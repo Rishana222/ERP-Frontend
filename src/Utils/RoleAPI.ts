@@ -1,66 +1,85 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "../Utils/Axios";
 
-/* ========= Types ========= */
-
-export interface RolePayload {
-  role_name: string;
-  permission: string[];
-}
-
 export interface Role {
   _id: string;
-  role_name: string;
-  permission: { _id: string; name: string }[];
+  name: string;
+  permissions: string[];
+  is_deleted: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface RolePayload {
-  role_name: string;
-  description?: string;
-  status?: boolean;
+  name: string;
+  permissions: string[];
 }
 
-export interface Role {
-  _id: string;
-  role_name: string;
-  description?: string;
-  status: boolean;
-}
-/* ========= API ========= */
 
-export const createRole = (data: RolePayload) => {
-  return axiosInstance.post("/api/roles/create", data);
-};
-export const getRoles = async () => {
+const getRoles = async (): Promise<Role[]> => {
   const res = await axiosInstance.get("/api/roles/get");
-  return res.data.data; // ✅ ONLY ARRAY
+
+  console.log("ROLE RESPONSE:", res.data);
+
+
+
+  return res.data.data || [];
 };
 
-export const updateRole = (id: string, payload: RolePayload) => {
-  return axiosInstance.put(`/api/roles/update/${id}`, payload);
-};
+export const useGetRoles = () =>
+  useQuery({
+    queryKey: ["roles"],
+    queryFn: getRoles,
+  });
 
-export const deleteRole = (id: string) => {
-  return axiosInstance.delete(`/api/roles/delete/${id}`);
-};
 
-/* ========= Hooks ========= */
+const createRole = (data: RolePayload) =>
+  axiosInstance.post("/api/roles/create", data);
 
-export const useCreateRole = () =>
-  useMutation({
-    mutationKey: ["createRole"],
+export const useCreateRole = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: createRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
   });
+};
 
-export const useUpdateRole = () =>
-  useMutation({
-    mutationKey: ["updateRole"],
-    mutationFn: ({ id, data }: { id: string; data: RolePayload }) =>
-      updateRole(id, data),
+
+
+const updateRole = ({
+  id,
+  data,
+}: {
+  id: string;
+  data: RolePayload;
+}) => axiosInstance.put(`/api/roles/update/${id}`, data);
+
+export const useUpdateRole = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
   });
+};
 
-export const useDeleteRole = () =>
-  useMutation({
-    mutationKey: ["deleteRole"],
+
+
+const deleteRole = (id: string) =>
+  axiosInstance.delete(`/api/roles/delete/${id}`);
+
+export const useDeleteRole = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: deleteRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+    },
   });
+};

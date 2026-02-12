@@ -1,34 +1,60 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { axiosInstance } from "../Utils/Axios";
 
-/* ========= Types ========= */
+
+
 export interface Permission {
   _id: string;
   name: string;
-  description?: string;
+  is_deleted: boolean;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PermissionPayload {
   name: string;
-  description?: string;
 }
 
-/* ========= API Functions ========= */
 
-// പെർമിഷനുകൾ ഫെച്ച് ചെയ്യാൻ
-export const getPermissions = async (): Promise<Permission[]> => {
+
+const getPermissions = async (): Promise<Permission[]> => {
   const res = await axiosInstance.get("/api/permissions/get");
-  return res.data.data;
+  return res.data; 
 };
 
-// പുതിയ പെർമിഷൻ ഉണ്ടാക്കാൻ
-export const createPermission = (data: PermissionPayload) =>
+const createPermission = (data: PermissionPayload) =>
   axiosInstance.post("/api/permissions/create", data);
 
-// പെർമിഷൻ അപ്‌ഡേറ്റ് ചെയ്യാൻ
-export const updatePermission = (id: string, data: PermissionPayload) =>
-  axiosInstance.put(`/api/permissions/update/${id}`, data);
+const updatePermission = ({
+  id,
+  name,
+}: {
+  id: string;
+  name: string;
+}) => axiosInstance.put(`/api/permissions/update/${id}`, { name });
 
-// പെർമിഷൻ ഡിലീറ്റ് ചെയ്യാൻ
-export const deletePermission = (id: string) =>
+const deletePermission = (id: string) =>
   axiosInstance.delete(`/api/permissions/delete/${id}`);
+
+
+
+export const useGetPermissions = () =>
+  useQuery({
+    queryKey: ["permissions"],
+    queryFn: getPermissions,
+  });
+
+export const useCreatePermission = () =>
+  useMutation({
+    mutationFn: createPermission,
+  });
+
+export const useUpdatePermission = () =>
+  useMutation({
+    mutationFn: updatePermission,
+  });
+
+export const useDeletePermission = () =>
+  useMutation({
+    mutationFn: deletePermission,
+  });
