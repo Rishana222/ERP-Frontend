@@ -1,199 +1,138 @@
 import React, { useState } from "react";
+import { Table, Modal, Form, Input, message, Popconfirm } from "antd";
 import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Switch,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { createStyles } from "antd-style";
+  useGetCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "../Utils/CategoroyAPI";
+import type { Category, CategoryPayload } from "../Utils/CategoroyAPI";
+const CategoryPage: React.FC = () => {
+  const { data: categories = [], isLoading } = useGetCategories();
+  const createMutation = useCreateCategory();
+  const updateMutation = useUpdateCategory();
+  const deleteMutation = useDeleteCategory();
 
-const { Option } = Select;
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [form] = Form.useForm();
 
-/* ---------- Styles ---------- */
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
+
+  const openModal = (category?: Category) => {
+    if (category) {
+      setEditingCategory(category);
+      form.setFieldsValue(category);
+    } else {
+      setEditingCategory(null);
+      form.resetFields();
     }
-  `,
-}));
+    setModalVisible(true);
+  };
 
-/* ---------- Types ---------- */
-interface CategoryData {
-  key: string;
-  name: string;
-  shop: string;
-  description?: string;
-  isActive: boolean;
-}
 
-/* ---------- Component ---------- */
-const Categories: React.FC = () => {
-  const { styles } = useStyle();
+  const handleSave = async (values: CategoryPayload) => {
+    try {
+      if (editingCategory) {
+        await updateMutation.mutateAsync({ id: editingCategory._id, data: values });
+        message.success("Category updated successfully");
+      } else {
+        await createMutation.mutateAsync(values);
+        message.success("Category created successfully");
+      }
+      setModalVisible(false);
+      form.resetFields();
+    } catch (err) {
+      message.error("Error saving category");
+    }
+  };
 
-  const [openAddModal, setOpenAddModal] = useState(false);
-  const [openEditModal, setOpenEditModal] = useState(false);
-  const [editingCategory, setEditingCategory] =
-    useState<CategoryData | null>(null);
 
-  const [addForm] = Form.useForm<CategoryData>();
-  const [editForm] = Form.useForm<CategoryData>();
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      message.success("Category deleted successfully");
+    } catch (err) {
+      message.error("Error deleting category");
+    }
+  };
 
-  /* ---------- Columns ---------- */
-  const columns: ColumnsType<CategoryData> = [
-    { title: "Category Name", dataIndex: "name", width: 200 },
-    { title: "Shop", dataIndex: "shop", width: 200 },
-    { title: "Description", dataIndex: "description" },
+  const columns = [
+    { title: "Name", dataIndex: "name", key: "name" },
+    { title: "Description", dataIndex: "description", key: "description" },
     {
-      title: "Active",
-      dataIndex: "isActive",
-      width: 100,
-      render: (val: boolean) => (val ? "Yes" : "No"),
-    },
-    {
-      title: "Action",
-      width: 150,
-      render: (_, record) => (
+      title: "Actions",
+      key: "action",
+      render: (_: any, record: Category) => (
         <div className="flex gap-2">
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => {
-              setEditingCategory(record);
-              editForm.setFieldsValue(record);
-              setOpenEditModal(true);
-            }}
+          <button
+            onClick={() => openModal(record)}
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
           >
             Edit
-          </Button>
-          <Button size="small" danger>
-            Delete
-          </Button>
+          </button>
+
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+              Delete
+            </button>
+          </Popconfirm>
         </div>
       ),
-    },
+    }
   ];
 
   return (
-    <div>
-      {/* Header */}
+    <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Categories</h2>
-        <Button type="primary" onClick={() => setOpenAddModal(true)}>
+        <button
+          className="px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
+          onClick={() => openModal()}
+        >
           Add Category
-        </Button>
+        </button>
       </div>
 
-      {/* Table */}
-      <Table<CategoryData>
-        bordered
-        className={styles.customTable}
+      <Table
+        dataSource={categories}
         columns={columns}
-        dataSource={[]}
-        pagination={false}
-        scroll={{ x: "max-content" }}
-        style={{ marginTop: 16 }}
+        rowKey="_id"
+        loading={isLoading}
+        bordered
+        className="erp-table"
       />
 
-      {/* Add Modal */}
       <Modal
-        title="Add Category"
-        open={openAddModal}
-        onCancel={() => setOpenAddModal(false)}
-        footer={null}
-        destroyOnClose
+        title={editingCategory ? "Edit Category" : "Add Category"}
+        open={modalVisible}
+        onCancel={() => { setModalVisible(false); form.resetFields(); setEditingCategory(null); }}
+        onOk={() => form.submit()}
       >
         <Form
+          form={form}
           layout="vertical"
-          form={addForm}
-          initialValues={{ isActive: true }}
-          onFinish={(values) => {
-            console.log("ADD CATEGORY:", values);
-            setOpenAddModal(false);
-            addForm.resetFields();
-          }}
+          onFinish={handleSave}
         >
-          <Form.Item name="name" label="Category Name" rules={[{ required: true }]}>
+          <Form.Item
+            label="Name"
+            name="name"
+            rules={[{ required: true, message: "Category name is required" }]}
+          >
             <Input />
           </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select placeholder="Select shop">
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Save
-          </Button>
-        </Form>
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        title="Edit Category"
-        open={openEditModal}
-        onCancel={() => {
-          setOpenEditModal(false);
-          setEditingCategory(null);
-        }}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          layout="vertical"
-          form={editForm}
-          onFinish={(values) => {
-            console.log("UPDATE CATEGORY:", {
-              ...editingCategory,
-              ...values,
-            });
-            setOpenEditModal(false);
-          }}
-        >
-          <Form.Item name="name" label="Category Name" rules={[{ required: true }]}>
+          <Form.Item
+            label="Description"
+            name="description"
+          >
             <Input />
           </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select>
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Update
-          </Button>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 
-export default Categories;
+export default CategoryPage;

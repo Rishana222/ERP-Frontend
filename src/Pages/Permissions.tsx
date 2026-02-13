@@ -1,84 +1,60 @@
-import { Button, Modal, Form, Select, Table, Tag, Popconfirm } from "antd";
 import { useState } from "react";
+import { Button, Form, Modal, Table, Popconfirm, Select } from "antd";
 import { toast } from "react-toastify";
-
 import {
   useGetPermissions,
   useCreatePermission,
   useUpdatePermission,
   useDeletePermission,
 } from "../Utils/permissionsApi";
-import type { Permission, PermissionPayload } from "../Utils/permissionsApi";
+import type { Permission } from "../Utils/permissionsApi";
+import { DASH_ACCESSES } from "../constants/dashbordaccess";
 
-const ERP_ACCESSES = [
-  "users",
-  "roles",
-  "products",
-  "purchase",
-  "sales",
-  "stock",
-  "accounts",
-  "reports",
-  "vendors",
-  "customers",
-];
-
-const Permissions = () => {
+function Permissions() {
   const [openModal, setOpenModal] = useState(false);
-  const [editingPermission, setEditingPermission] = useState<Permission | null>(
-    null,
-  );
+  const [editingPermission, setEditingPermission] =
+    useState<Permission | null>(null);
+  const [form] = Form.useForm();
 
-  const [form] = Form.useForm<PermissionPayload>();
+  const { data, isLoading, refetch } = useGetPermissions();
+  const createMutation = useCreatePermission();
+  const updateMutation = useUpdatePermission();
+  const deleteMutation = useDeletePermission();
 
-  /* ========= QUERY ========= */
-  const { data: permissions, isLoading, refetch } = useGetPermissions();
-
-  /* ========= MUTATIONS ========= */
-  const { mutate: createPermission } = useCreatePermission();
-  const { mutate: updatePermission } = useUpdatePermission();
-  const { mutate: deletePermission } = useDeletePermission();
-
-  /* ========= SAVE ========= */
-  const handleSave = (values: PermissionPayload) => {
+  const handleSave = (values: { name: string }) => {
     if (editingPermission) {
-      updatePermission(
-        { id: editingPermission._id, data: values },
+      updateMutation.mutate(
+        { id: editingPermission._id, name: values.name },
         {
-          onSuccess() {
+          onSuccess: () => {
             toast.success("Permission updated");
             closeModal();
             refetch();
           },
-          onError(err: any) {
-            toast.error(err?.response?.data?.message || "Update failed");
-          },
-        },
+          onError: (err: any) =>
+            toast.error(err?.response?.data?.message || "Update failed"),
+        }
       );
     } else {
-      createPermission(values, {
-        onSuccess() {
+      createMutation.mutate(values, {
+        onSuccess: () => {
           toast.success("Permission created");
           closeModal();
           refetch();
         },
-        onError(err: any) {
-          toast.error(err?.response?.data?.message || "Create failed");
-        },
+        onError: (err: any) =>
+          toast.error(err?.response?.data?.message || "Create failed"),
       });
     }
   };
 
-  /* ========= DELETE ========= */
   const handleDelete = (id: string) => {
-    deletePermission(id, {
-      onSuccess() {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
         toast.success("Permission deleted");
         refetch();
       },
-      onError() {
-        toast.error("Delete failed");
-      },
+      onError: () => toast.error("Delete failed"),
     });
   };
 
@@ -88,71 +64,36 @@ const Permissions = () => {
     form.resetFields();
   };
 
-  /* ========= TABLE ========= */
   const columns = [
     {
-      title: "Permission",
+      title: "Permission Name",
       dataIndex: "name",
       render: (name: string) => (
-        <Tag
-          color="blue"
-          style={{
-            backgroundColor: "#E6F0FF",
-            color: "#00264d",
-
-            fontWeight: "500",
-          }}
-        >
+        <span style={{ fontWeight: 500 }}>
           {name.toUpperCase()}
-        </Tag>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "is_deleted",
-      render: (deleted: boolean) => (
-        <Tag
-          style={{
-            borderRadius: "4px",
-            fontWeight: "600",
-
-            color: deleted ? "#cf1322" : "#00264d",
-          }}
-        >
-          {deleted ? "DELETED" : "ACTIVE"}
-        </Tag>
+        </span>
       ),
     },
     {
       title: "Action",
       render: (_: any, record: Permission) => (
-        <div className="flex space-x-2">
-          {/* UPDATE */}
+        <div className="flex gap-2">
           <button
             onClick={() => {
               setEditingPermission(record);
               form.setFieldsValue({ name: record.name });
               setOpenModal(true);
             }}
-            className="px-3 py-1 text-sm rounded
-                   bg-[#00264d] text-white
-                   hover:bg-[#003a73]
-                   transition"
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white"
           >
-            Update
+            Edit
           </button>
 
-          {/* DELETE */}
           <Popconfirm
             title="Are you sure?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <button
-              className="px-3 py-1 text-sm rounded
-                       bg-[#b91c1c] text-white
-                       hover:bg-[#991b1b]
-                       transition"
-            >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
               Delete
             </button>
           </Popconfirm>
@@ -163,14 +104,13 @@ const Permissions = () => {
 
   return (
     <>
-      <div className="flex justify-between mb-4">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Permissions</h2>
-
         <Button
           type="primary"
           onClick={() => {
-            form.resetFields();
             setEditingPermission(null);
+            form.resetFields();
             setOpenModal(true);
           }}
         >
@@ -181,7 +121,7 @@ const Permissions = () => {
       <Table
         rowKey="_id"
         columns={columns}
-        dataSource={permissions}
+        dataSource={data}
         loading={isLoading}
         bordered
         className="erp-table"
@@ -196,13 +136,13 @@ const Permissions = () => {
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item
             name="name"
-            label="Permission Name"
+            label="Permission"
             rules={[{ required: true, message: "Select permission" }]}
           >
-            <Select placeholder="Select permission">
-              {ERP_ACCESSES.map((p) => (
-                <Select.Option key={p} value={p}>
-                  {p.toUpperCase()}
+            <Select placeholder="Select Permission">
+              {DASH_ACCESSES.map((item) => (
+                <Select.Option key={item} value={item}>
+                  {item.toUpperCase()}
                 </Select.Option>
               ))}
             </Select>
@@ -211,6 +151,6 @@ const Permissions = () => {
       </Modal>
     </>
   );
-};
+}
 
 export default Permissions;

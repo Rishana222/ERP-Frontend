@@ -1,239 +1,156 @@
-import React, { useState } from "react";
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Switch,
-} from "antd";
+import { useState } from "react";
+import { Table, Button, Modal, Form, Input, InputNumber, Popconfirm, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { createStyles } from "antd-style";
+import {
+  useGetTaxes,
+  useCreateTax,
+  useUpdateTax,
+  useDeleteTax,
+} from "../Utils/TaxAPI";
+import type { Tax, TaxPayload } from "../Utils/TaxAPI";
+const TaxPage = () => {
+  const { data: taxes = [], isLoading } = useGetTaxes();
+  const createTax = useCreateTax();
+  const updateTax = useUpdateTax();
+  const deleteTax = useDeleteTax();
 
-const { Option } = Select;
+  const [open, setOpen] = useState(false);
+  const [editingTax, setEditingTax] = useState<Tax | null>(null);
+  const [form] = Form.useForm();
 
-/* ---------- Styles ---------- */
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
+
+  const handleSubmit = async () => {
+    try {
+      const values: TaxPayload = await form.validateFields();
+
+      if (editingTax) {
+        await updateTax.mutateAsync({ id: editingTax._id, data: values });
+        message.success("Tax updated successfully");
+      } else {
+        await createTax.mutateAsync(values);
+        message.success("Tax created successfully");
       }
+
+      form.resetFields();
+      setEditingTax(null);
+      setOpen(false);
+    } catch (error) {
+      message.error("Something went wrong");
     }
-  `,
-}));
+  };
 
-/* ---------- Types ---------- */
-interface CustomerData {
-  key: string;
-  name: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  shop: string;
-  openingBalance: number;
-  creditLimit: number;
-  isActive: boolean;
-}
 
-/* ---------- Component ---------- */
-const Customers: React.FC = () => {
-  const { styles } = useStyle();
+  const handleEdit = (record: Tax) => {
+    setEditingTax(record);
+    form.setFieldsValue(record);
+    setOpen(true);
+  };
 
-  const [openAddModal, setOpenAddModal] = useState(false);
-  const [openEditModal, setOpenEditModal] = useState(false);
-  const [editingCustomer, setEditingCustomer] =
-    useState<CustomerData | null>(null);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTax.mutateAsync(id);
+      message.success("Tax deleted successfully");
+    } catch {
+      message.error("Delete failed");
+    }
+  };
 
-  const [addForm] = Form.useForm<CustomerData>();
-  const [editForm] = Form.useForm<CustomerData>();
-
-  /* ---------- Columns ---------- */
-  const columns: ColumnsType<CustomerData> = [
-    { title: "Customer Name", dataIndex: "name", width: 200 },
-    { title: "Phone", dataIndex: "phone", width: 150 },
-    { title: "Email", dataIndex: "email", width: 200 },
-    { title: "Shop", dataIndex: "shop", width: 150 },
-    { title: "Opening Balance", dataIndex: "openingBalance", width: 150 },
-    { title: "Credit Limit", dataIndex: "creditLimit", width: 150 },
+  const columns: ColumnsType<Tax> = [
     {
-      title: "Active",
-      dataIndex: "isActive",
-      width: 100,
-      render: (val: boolean) => (val ? "Yes" : "No"),
+      title: "Tax Name",
+      dataIndex: "name",
     },
     {
-      title: "Action",
-      width: 150,
-      render: (_, record) => (
+      title: "Percentage",
+      dataIndex: "percentage",
+      render: (value: number) => `${value}%`,
+    },
+    {
+      title: "Actions",
+      key: "action",
+      render: (_: any, record: Tax) => (
         <div className="flex gap-2">
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => {
-              setEditingCustomer(record);
-              editForm.setFieldsValue(record);
-              setOpenEditModal(true);
-            }}
+          <button
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
+            onClick={() => handleEdit(record)}
           >
             Edit
-          </Button>
-          <Button size="small" danger>
-            Delete
-          </Button>
+          </button>
+
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+              Delete
+            </button>
+          </Popconfirm>
         </div>
       ),
-    },
+    }
   ];
 
   return (
-    <div>
-      {/* Header */}
+    <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Customers</h2>
-        <Button type="primary" onClick={() => setOpenAddModal(true)}>
-          Add Customer
+        <h2 className="text-xl font-semibold">Taxes</h2>
+
+        <Button
+          type="primary"
+          onClick={() => {
+            setOpen(true);
+            setEditingTax(null);
+          }}
+        >
+          Add Tax
         </Button>
       </div>
 
-      {/* Table */}
-      <Table<CustomerData>
-        bordered
-        className={styles.customTable}
+
+      <Table
         columns={columns}
-        dataSource={[]}
-        pagination={false}
-        scroll={{ x: "max-content" }}
-        style={{ marginTop: 16 }}
+        dataSource={taxes}
+        rowKey="_id"
+        loading={isLoading}
+        bordered
+        className="erp-table"
       />
 
-      {/* Add Customer Modal */}
       <Modal
-        title="Add Customer"
-        open={openAddModal}
-        onCancel={() => setOpenAddModal(false)}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          layout="vertical"
-          form={addForm}
-          initialValues={{ isActive: true }}
-          onFinish={(values) => {
-            console.log("ADD CUSTOMER:", values);
-            setOpenAddModal(false);
-            addForm.resetFields();
-          }}
-        >
-          <Form.Item name="name" label="Customer Name" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="phone" label="Phone">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="email" label="Email">
-            <Input type="email" />
-          </Form.Item>
-
-          <Form.Item name="address" label="Address">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select placeholder="Select shop">
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="openingBalance" label="Opening Balance">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="creditLimit" label="Credit Limit">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Save
-          </Button>
-        </Form>
-      </Modal>
-
-      {/* Edit Customer Modal */}
-      <Modal
-        title="Edit Customer"
-        open={openEditModal}
+        title={editingTax ? "Edit Tax" : "Add Tax"}
+        open={open}
+        onOk={handleSubmit}
         onCancel={() => {
-          setOpenEditModal(false);
-          setEditingCustomer(null);
+          setOpen(false);
+          setEditingTax(null);
+          form.resetFields();
         }}
-        footer={null}
-        destroyOnClose
       >
-        <Form
-          layout="vertical"
-          form={editForm}
-          onFinish={(values) => {
-            console.log("UPDATE CUSTOMER:", {
-              ...editingCustomer,
-              ...values,
-            });
-            setOpenEditModal(false);
-          }}
-        >
-          <Form.Item name="name" label="Customer Name" rules={[{ required: true }]}>
-            <Input />
+        <Form form={form} layout="vertical">
+          <Form.Item
+            label="Tax Name"
+            name="name"
+            rules={[{ required: true, message: "Enter tax name" }]}
+          >
+            <Input placeholder="GST 18%" />
           </Form.Item>
 
-          <Form.Item name="phone" label="Phone">
-            <Input />
+          <Form.Item
+            label="Percentage"
+            name="percentage"
+            rules={[{ required: true, message: "Enter percentage" }]}
+          >
+            <InputNumber
+              min={0}
+              max={100}
+              style={{ width: "100%" }}
+              placeholder="18"
+            />
           </Form.Item>
-
-          <Form.Item name="email" label="Email">
-            <Input type="email" />
-          </Form.Item>
-
-          <Form.Item name="address" label="Address">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select>
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="openingBalance" label="Opening Balance">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="creditLimit" label="Credit Limit">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Update
-          </Button>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 
-export default Customers;
+export default TaxPage;
