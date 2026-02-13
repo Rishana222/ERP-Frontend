@@ -1,153 +1,159 @@
-import {
-  Button,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Switch,
-  Table,
-} from "antd";
-import type { TableColumnsType } from "antd";
 import { useState } from "react";
-import { createStyles } from "antd-style";
+import { Button, Form, Modal, Table, Popconfirm, Input, Select } from "antd";
+import { toast } from "react-toastify";
 
-const { Option } = Select;
+import {
+  useGetProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+} from "../Utils/productApi";
 
-/* -------------------- Styles -------------------- */
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-      }
+import { useGetCategories } from "../Utils/CategoroyAPI";
+import { useGetSubCategories } from "../Utils/SubcategoryAPI";
+import { useGetUnits } from "../Utils/UnitAPI";
+import { useGetTaxes } from "../Utils/TaxAPI";
+
+function ProductPage() {
+  const [openModal, setOpenModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [form] = Form.useForm();
+
+  /* ================= API CALLS ================= */
+  const { data: products, isLoading } = useGetProducts();
+  const { data: categories } = useGetCategories();
+  const { data: subCategories } = useGetSubCategories();
+  const { data: units } = useGetUnits();
+  const { data: taxes } = useGetTaxes();
+
+  const createMutation = useCreateProduct();
+  const updateMutation = useUpdateProduct();
+  const deleteMutation = useDeleteProduct();
+
+  /* ================= HANDLERS ================= */
+
+  const handleSave = (values: any) => {
+    if (editingProduct) {
+      updateMutation.mutate(
+        { id: editingProduct._id, data: values },
+        {
+          onSuccess: () => {
+            toast.success("Product updated successfully");
+            closeModal();
+          },
+          onError: () => toast.error("Failed to update product"),
+        },
+      );
+    } else {
+      createMutation.mutate(values, {
+        onSuccess: () => {
+          toast.success("Product created successfully");
+          closeModal();
+        },
+        onError: () => toast.error("Failed to create product"),
+      });
     }
-  `,
-}));
+  };
 
-/* -------------------- Types -------------------- */
-interface Product {
-  key: string;
-  name: string;
-  sku: string;
-  shop: string;
-  category: string;
-  subCategory?: string;
-  unit: string;
-  purchasePrice: number;
-  sellingPrice: number;
-  taxPercent?: number;
-  stock?: number;
-  isActive: boolean;
-}
+  const handleEdit = (product: any) => {
+    setEditingProduct(product);
+    form.setFieldsValue({
+      name: product.name,
+      category: product.category?._id,
+      subCategory: product.subCategory?._id,
+      unit: product.unit?._id,
+      tax: product.tax?._id,
+      price: product.price,
+    });
+    setOpenModal(true);
+  };
 
-/* -------------------- Component -------------------- */
-const Products: React.FC = () => {
-  const { styles } = useStyle();
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Product deleted successfully"),
+      onError: () => toast.error("Failed to delete product"),
+    });
+  };
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [openUpdateModal, setOpenUpdateModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const closeModal = () => {
+    setOpenModal(false);
+    setEditingProduct(null);
+    form.resetFields();
+  };
 
-  const [form] = Form.useForm<Product>();
-  const [updateForm] = Form.useForm<Product>();
+  /* ================= TABLE COLUMNS ================= */
 
-  /* -------------------- Columns -------------------- */
-  const columns: TableColumnsType<Product> = [
-    { title: "Name", dataIndex: "name", width: 150 },
-    { title: "SKU", dataIndex: "sku", width: 120 },
-    { title: "Shop", dataIndex: "shop", width: 150 },
-    { title: "Category", dataIndex: "category", width: 150 },
-    { title: "Sub Category", dataIndex: "subCategory", width: 150 },
-    { title: "Unit", dataIndex: "unit", width: 100 },
-    { title: "Purchase Price", dataIndex: "purchasePrice", width: 150 },
-    { title: "Selling Price", dataIndex: "sellingPrice", width: 150 },
-    { title: "Tax (%)", dataIndex: "taxPercent", width: 100 },
-    { title: "Stock", dataIndex: "stock", width: 100 },
+  const columns = [
+    { title: "Name", dataIndex: "name" },
     {
-      title: "Active",
-      dataIndex: "isActive",
-      width: 100,
-      render: (val) => (val ? "Yes" : "No"),
+      title: "Category",
+      render: (_: any, record: any) => record.category?.name || "-",
     },
     {
-      title: "Action",
-      width: 150,
-      render: (_, record) => (
+      title: "Sub Category",
+      render: (_: any, record: any) => record.subCategory?.name || "-",
+    },
+    {
+      title: "Unit",
+      render: (_: any, record: any) => record.unit?.name || "-",
+    },
+    { title: "Tax", render: (_: any, record: any) => record.tax?.name || "-" },
+    { title: "Price", dataIndex: "price" },
+    {
+      title: "Actions",
+      render: (_: any, record: any) => (
         <div className="flex gap-2">
-          <Button
-            danger
-            size="small"
-            onClick={() =>
-              setProducts((prev) =>
-                prev.filter((item) => item.key !== record.key),
-              )
-            }
-          >
-            Delete
-          </Button>
-
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => {
-              setEditingProduct(record);
-              updateForm.setFieldsValue(record);
-              setOpenUpdateModal(true);
-            }}
+          <button
+            onClick={() => handleEdit(record)}
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
           >
             Edit
-          </Button>
+          </button>
+
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+              Delete
+            </button>
+          </Popconfirm>
         </div>
       ),
     },
   ];
 
   return (
-    <div>
-      {/* Header */}
+    <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Products</h2>
-        <Button type="primary" onClick={() => setOpenCreateModal(true)}>
+        <Button
+          type="primary"
+          onClick={() => {
+            setEditingProduct(null);
+            setOpenModal(true);
+          }}
+        >
           Add Product
         </Button>
       </div>
 
-      {/* Table */}
-      <Table<Product>
-        bordered
-        className={styles.customTable}
+      <Table
+        rowKey="_id"
         columns={columns}
         dataSource={products}
-        rowKey="key"
-        pagination={false}
-        scroll={{ x: "max-content" }}
-        style={{ marginTop: 16 }}
+        loading={isLoading}
+        bordered
+        className="erp-table"
       />
 
-      {/* Add Product Modal */}
       <Modal
-        title="Add Product"
-        open={openCreateModal}
-        onCancel={() => setOpenCreateModal(false)}
-        footer={null}
-        destroyOnClose
+        open={openModal}
+        title={editingProduct ? "Edit Product" : "Create Product"}
+        onCancel={closeModal}
+        onOk={() => form.submit()}
       >
-        <Form
-          layout="vertical"
-          form={form}
-          initialValues={{ isActive: true }}
-          onFinish={(values) => {
-            setProducts((prev) => [
-              ...prev,
-              { ...values, key: Date.now().toString() },
-            ]);
-            setOpenCreateModal(false);
-            form.resetFields();
-          }}
-        >
+        <Form layout="vertical" form={form} onFinish={handleSave}>
           <Form.Item
             name="name"
             label="Product Name"
@@ -156,101 +162,57 @@ const Products: React.FC = () => {
             <Input />
           </Form.Item>
 
-          <Form.Item name="sku" label="SKU" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select>
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
           <Form.Item
             name="category"
             label="Category"
             rules={[{ required: true }]}
           >
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="subCategory" label="Sub Category">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="unit" label="Unit" rules={[{ required: true }]}>
-            <Select>
-              <Option value="pcs">pcs</Option>
-              <Option value="kg">kg</Option>
+            <Select placeholder="Select Category">
+              {categories?.map((cat: any) => (
+                <Select.Option key={cat._id} value={cat._id}>
+                  {cat.name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
 
-          <Form.Item name="purchasePrice" label="Purchase Price">
-            <InputNumber min={0} style={{ width: "100%" }} />
+          <Form.Item name="subCategory" label="Sub Category">
+            <Select placeholder="Select Sub Category" allowClear>
+              {subCategories?.map((sub: any) => (
+                <Select.Option key={sub._id} value={sub._id}>
+                  {sub.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
-          <Form.Item name="sellingPrice" label="Selling Price">
-            <InputNumber min={0} style={{ width: "100%" }} />
+          <Form.Item name="unit" label="Unit">
+            <Select placeholder="Select Unit" allowClear>
+              {units?.map((unit: any) => (
+                <Select.Option key={unit._id} value={unit._id}>
+                  {unit.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
-          <Form.Item name="taxPercent" label="Tax (%)">
-            <InputNumber min={0} max={100} style={{ width: "100%" }} />
+          <Form.Item name="tax" label="Tax">
+            <Select placeholder="Select Tax" allowClear>
+              {taxes?.map((tax: any) => (
+                <Select.Option key={tax._id} value={tax._id}>
+                  {tax.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
-          <Form.Item name="stock" label="Stock">
-            <InputNumber min={0} style={{ width: "100%" }} />
+          <Form.Item name="price" label="Price" rules={[{ required: true }]}>
+            <Input type="number" />
           </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Save
-          </Button>
         </Form>
       </Modal>
-
-      {/* Update Product Modal */}
-      <Modal
-        title="Update Product"
-        open={openUpdateModal}
-        onCancel={() => setOpenUpdateModal(false)}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          layout="vertical"
-          form={updateForm}
-          onFinish={(values) => {
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.key === editingProduct?.key ? { ...p, ...values } : p,
-              ),
-            );
-            setOpenUpdateModal(false);
-          }}
-        >
-          <Form.Item name="name" label="Product Name">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="sellingPrice" label="Selling Price">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Update
-          </Button>
-        </Form>
-      </Modal>
-    </div>
+    </>
   );
-};
+}
 
-export default Products;
+export default ProductPage;
