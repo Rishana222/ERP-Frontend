@@ -1,20 +1,20 @@
 import React, { useState } from "react";
-import { Table, Modal, Form, Input, Popconfirm, message } from "antd";
+import { Table, Modal, Form, Input, InputNumber, Popconfirm, message } from "antd";
 import {
   useGetUnits,
   useCreateUnit,
   useUpdateUnit,
   useDeleteUnit,
+
 } from "../Utils/UnitAPI";
 import type { Unit, UnitPayload } from "../Utils/UnitAPI";
-
 const UnitsPage: React.FC = () => {
   const { data: units = [], isLoading } = useGetUnits();
   const createMutation = useCreateUnit();
   const updateMutation = useUpdateUnit();
   const deleteMutation = useDeleteUnit();
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [open, setOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [form] = Form.useForm();
 
@@ -24,46 +24,51 @@ const UnitsPage: React.FC = () => {
       form.setFieldsValue({
         name: unit.name,
         shortName: unit.shortName,
+        baseUnit: unit.baseUnit,
+        baseValue: unit.baseValue,
       });
     } else {
       setEditingUnit(null);
       form.resetFields();
     }
-    setModalVisible(true);
+    setOpen(true);
   };
 
-
-  const handleSave = async (values: UnitPayload) => {
+  const handleSubmit = async (values: UnitPayload) => {
     try {
       if (editingUnit) {
-        await updateMutation.mutateAsync({ id: editingUnit._id, data: values });
-        message.success("Unit updated successfully");
+        await updateMutation.mutateAsync({
+          id: editingUnit._id,
+          data: values,
+        });
+        message.success("Unit updated");
       } else {
         await createMutation.mutateAsync(values);
-        message.success("Unit created successfully");
+        message.success("Unit created");
       }
-      setModalVisible(false);
+      setOpen(false);
       form.resetFields();
-    } catch (err) {
-      message.error("Error saving unit");
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || "Something went wrong");
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteMutation.mutateAsync(id);
-      message.success("Unit deleted successfully");
-    } catch (err) {
-      message.error("Error deleting unit");
+      message.success("Unit deleted");
+    } catch {
+      message.error("Delete failed");
     }
   };
 
   const columns = [
-    { title: "Name", dataIndex: "name", key: "name" },
-    { title: "Short Name", dataIndex: "shortName", key: "shortName" },
+    { title: "Name", dataIndex: "name" },
+    { title: "Short Name", dataIndex: "shortName" },
+    { title: "Base Unit", dataIndex: "baseUnit" },
+    { title: "Base Value", dataIndex: "baseValue" },
     {
       title: "Actions",
-      key: "action",
       render: (_: any, record: Unit) => (
         <div className="flex gap-2">
           <button
@@ -72,7 +77,11 @@ const UnitsPage: React.FC = () => {
           >
             Edit
           </button>
-          <Popconfirm title="Are you sure?" onConfirm={() => handleDelete(record._id)}>
+
+          <Popconfirm
+            title="Delete this unit?"
+            onConfirm={() => handleDelete(record._id)}
+          >
             <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
               Delete
             </button>
@@ -84,42 +93,50 @@ const UnitsPage: React.FC = () => {
 
   return (
     <div>
-
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Units</h2>
         <button
-          className="px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
+          className="px-4 py-2 bg-[#00264d] text-white rounded"
           onClick={() => openModal()}
         >
           Add Unit
         </button>
       </div>
 
+      <Table
+        dataSource={units}
+        columns={columns}
+        rowKey="_id"
+        loading={isLoading}
+        bordered
+        className="erp-table"
+      />
 
-      <Table dataSource={units} columns={columns} rowKey="_id" loading={isLoading} bordered className="erp-table" />
-
-  
       <Modal
         title={editingUnit ? "Edit Unit" : "Add Unit"}
-        open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          form.resetFields();
-          setEditingUnit(null);
-        }}
+        open={open}
+        onCancel={() => setOpen(false)}
         onOk={() => form.submit()}
       >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             label="Name"
             name="name"
-            rules={[{ required: true, message: "Unit name is required" }]}
+            rules={[{ required: true, message: "Name required" }]}
           >
             <Input />
           </Form.Item>
 
           <Form.Item label="Short Name" name="shortName">
             <Input />
+          </Form.Item>
+
+          <Form.Item label="Base Unit" name="baseUnit">
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Base Value" name="baseValue">
+            <InputNumber style={{ width: "100%" }} min={0} />
           </Form.Item>
         </Form>
       </Modal>
