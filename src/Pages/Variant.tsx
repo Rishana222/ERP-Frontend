@@ -1,233 +1,160 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { Button, Form, Modal, Table, Popconfirm, Input, Select } from "antd";
+import { toast } from "react-toastify";
+
 import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Switch,
-  InputNumber,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { createStyles } from "antd-style";
+  useGetVariants,
+  useCreateVariant,
+  useUpdateVariant,
+  useDeleteVariant,
+} from "../Utils/VariantAPI";
+import { useGetProducts } from "../Utils/productApi";
 
-const { Option } = Select;
+function VariantPage() {
+  const [openModal, setOpenModal] = useState(false);
+  const [editingVariant, setEditingVariant] = useState<any>(null);
+  const [form] = Form.useForm();
 
-/* -------------------- Styles -------------------- */
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
+  /* ================= API CALLS ================= */
+  const { data: variants, isLoading: variantsLoading } = useGetVariants();
+  const { data: products } = useGetProducts();
+
+  const createMutation = useCreateVariant();
+  const updateMutation = useUpdateVariant();
+  const deleteMutation = useDeleteVariant();
+
+  /* ================= HANDLERS ================= */
+  const handleSave = (values: any) => {
+    if (editingVariant) {
+      updateMutation.mutate(
+        { id: editingVariant._id, data: values },
+        {
+          onSuccess: () => {
+            toast.success("Variant updated successfully");
+            closeModal();
+          },
+          onError: () => toast.error("Failed to update variant"),
+        },
+      );
+    } else {
+      createMutation.mutate(values, {
+        onSuccess: () => {
+          toast.success("Variant created successfully");
+          closeModal();
+        },
+        onError: () => toast.error("Failed to create variant"),
+      });
     }
-  `,
-}));
+  };
 
-/* ---------- Types ---------- */
-interface VariantData {
-  key: string;
-  name: string;
-  value: string;
-  product: string;
-  shop: string;
-  price: number;
-  stock: number;
-  isActive: boolean;
-}
+  const handleEdit = (variant: any) => {
+    setEditingVariant(variant);
+    form.setFieldsValue({
+      name: variant.name,
+      product: variant.product?._id,
+    });
+    setOpenModal(true);
+  };
 
-/* ---------- Columns ---------- */
-const columns: ColumnsType<VariantData> = [
-  { title: "Variant Name", dataIndex: "name", width: 150 },
-  { title: "Value", dataIndex: "value", width: 150 },
-  { title: "Product", dataIndex: "product", width: 200 },
-  { title: "Shop", dataIndex: "shop", width: 180 },
-  { title: "Price", dataIndex: "price", width: 100 },
-  { title: "Stock", dataIndex: "stock", width: 100 },
-  {
-    title: "Active",
-    dataIndex: "isActive",
-    width: 100,
-    render: (val: boolean) => (val ? "Yes" : "No"),
-  },
-  {
-    title: "Action",
-    width: 150,
-    render: () => (
-      <div className="flex gap-2">
-        <a>Edit</a>
-        <a style={{ color: "red" }}>Delete</a>
-      </div>
-    ),
-  },
-];
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Variant deleted successfully"),
+      onError: () => toast.error("Failed to delete variant"),
+    });
+  };
 
-const Variants: React.FC = () => {
-  const [openAddModal, setOpenAddModal] = useState(false);
-  const [openEditModal, setOpenEditModal] = useState(false);
+  const closeModal = () => {
+    setOpenModal(false);
+    setEditingVariant(null);
+    form.resetFields();
+  };
 
-  const [addForm] = Form.useForm();
-  const [editForm] = Form.useForm();
+  /* ================= TABLE COLUMNS ================= */
+  const columns = [
+    { title: "Variant Name", dataIndex: "name" },
+    {
+      title: "Product",
+      render: (_: any, record: any) => record.product?.name || "-",
+    },
+    {
+      title: "Actions",
+      render: (_: any, record: any) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleEdit(record)}
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
+          >
+            Edit
+          </button>
 
-  const { styles } = useStyle();
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+              Delete
+            </button>
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div>
-      {/* Header */}
+    <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Variant Master</h2>
-        <Button type="primary" onClick={() => setOpenAddModal(true)}>
+        <h2 className="text-xl font-semibold">Variants</h2>
+        <Button
+          type="primary"
+          onClick={() => {
+            setEditingVariant(null);
+            setOpenModal(true);
+          }}
+        >
           Add Variant
         </Button>
       </div>
-
-      {/* Table */}
-      <div className={styles.customTable}>
-        <Table<VariantData>
-          bordered
-          columns={columns}
-          dataSource={[]} // Replace with API later
-          rowKey="key"
-          pagination={false}
-          scroll={{ x: "max-content" }}
-          style={{ marginTop: 16 }}
-        />
-      </div>
-
-      {/* Add Variant Modal */}
+      <Table
+        rowKey="_id"
+        columns={columns}
+        dataSource={variants}
+        loading={variantsLoading}
+        bordered
+        className="erp-table"
+      />
+     
       <Modal
-        title="Add Variant"
-        open={openAddModal}
-        onCancel={() => setOpenAddModal(false)}
-        footer={null}
-        destroyOnClose
+        open={openModal}
+        title={editingVariant ? "Edit Variant" : "Create Variant"}
+        onCancel={closeModal}
+        onOk={() => form.submit()}
       >
-        <Form
-          layout="vertical"
-          form={addForm}
-          initialValues={{ isActive: true }}
-          onFinish={(values) => {
-            console.log("ADD VARIANT:", values);
-            setOpenAddModal(false);
-            addForm.resetFields();
-          }}
-        >
+        <Form layout="vertical" form={form} onFinish={handleSave}>
           <Form.Item
-            label="Variant Name"
             name="name"
-            rules={[{ required: true }]}
+            label="Variant Name"
+            rules={[{ required: true, message: "Please enter variant name" }]}
           >
-            <Input placeholder="Eg: Size / Color" />
-          </Form.Item>
-
-          <Form.Item label="Value" name="value" rules={[{ required: true }]}>
-            <Input placeholder="Eg: Small / Red" />
+            <Input />
           </Form.Item>
 
           <Form.Item
-            label="Product"
             name="product"
-            rules={[{ required: true }]}
+            label="Product"
+            rules={[{ required: true, message: "Please select a product" }]}
           >
             <Select placeholder="Select Product">
-              <Option value="product1">Product 1</Option>
-              <Option value="product2">Product 2</Option>
+              {products?.map((prod: any) => (
+                <Select.Option key={prod._id} value={prod._id}>
+                  {prod.name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
-
-          <Form.Item label="Shop" name="shop" rules={[{ required: true }]}>
-            <Select placeholder="Select Shop">
-              <Option value="shop1">Main Shop</Option>
-              <Option value="shop2">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Extra Price" name="price">
-            <InputNumber className="w-full" min={0} />
-          </Form.Item>
-
-          <Form.Item label="Stock" name="stock">
-            <InputNumber className="w-full" min={0} />
-          </Form.Item>
-
-          <Form.Item label="Active" name="isActive" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Save
-          </Button>
         </Form>
       </Modal>
-
-      {/* Edit Variant Modal */}
-      <Modal
-        title="Edit Variant"
-        open={openEditModal}
-        onCancel={() => setOpenEditModal(false)}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          layout="vertical"
-          form={editForm}
-          onFinish={(values) => {
-            console.log("EDIT VARIANT:", values);
-            setOpenEditModal(false);
-          }}
-        >
-          <Form.Item
-            label="Variant Name"
-            name="name"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="Value" name="value" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="Product"
-            name="product"
-            rules={[{ required: true }]}
-          >
-            <Select>
-              <Option value="product1">Product 1</Option>
-              <Option value="product2">Product 2</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Shop" name="shop" rules={[{ required: true }]}>
-            <Select>
-              <Option value="shop1">Main Shop</Option>
-              <Option value="shop2">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Extra Price" name="price">
-            <InputNumber className="w-full" min={0} />
-          </Form.Item>
-
-          <Form.Item label="Stock" name="stock">
-            <InputNumber className="w-full" min={0} />
-          </Form.Item>
-
-          <Form.Item label="Active" name="isActive" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Update
-          </Button>
-        </Form>
-      </Modal>
-    </div>
+    </>
   );
-};
+}
 
-export default Variants;
+export default VariantPage;
