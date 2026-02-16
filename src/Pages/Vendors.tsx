@@ -1,236 +1,208 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Button, Form, Modal, Table, Popconfirm, Input, Switch } from "antd";
+import { toast } from "react-toastify";
+
 import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Switch,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { createStyles } from "antd-style";
+  useGetVendors,
+  useCreateVendor,
+  useUpdateVendor,
+  useDeleteVendor,
+} from "../Utils/vendorApi";
 
-const { Option } = Select;
+import type { Vendor } from "../Utils/vendorApi";
 
-/* -------------------- Styles -------------------- */
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
+function VendorPage() {
+  const [openModal, setOpenModal] = useState(false);
+  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [form] = Form.useForm();
+
+  const { data, isLoading, refetch } = useGetVendors();
+  const createMutation = useCreateVendor();
+  const updateMutation = useUpdateVendor();
+  const deleteMutation = useDeleteVendor();
+
+  /* ================= SAVE ================= */
+
+  const handleSave = (values: any) => {
+    if (editingVendor) {
+      updateMutation.mutate(
+        { id: editingVendor._id, data: values },
+        {
+          onSuccess: () => {
+            toast.success("Vendor updated successfully");
+            closeModal();
+            refetch();
+          },
+          onError: (err: any) =>
+            toast.error(err?.response?.data?.message || "Update failed"),
+        },
+      );
+    } else {
+      createMutation.mutate(values, {
+        onSuccess: () => {
+          toast.success("Vendor created successfully");
+          closeModal();
+          refetch();
+        },
+        onError: (err: any) =>
+          toast.error(err?.response?.data?.message || "Create failed"),
+      });
     }
-  `,
-}));
+  };
 
-/* ---------- Types ---------- */
-interface VendorData {
-  key: string;
-  name: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  gstNumber?: string;
-  shop: string;
-  openingBalance: number;
-  isActive: boolean;
-}
+  /* ================= DELETE ================= */
 
-const Vendors: React.FC = () => {
-  const { styles } = useStyle();
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Vendor deleted");
+        refetch();
+      },
+      onError: () => toast.error("Delete failed"),
+    });
+  };
 
-  const [openAddModal, setOpenAddModal] = useState(false);
-  const [openEditModal, setOpenEditModal] = useState(false);
-  const [editingVendor, setEditingVendor] = useState<VendorData | null>(null);
+  /* ================= CLOSE MODAL ================= */
 
-  const [addForm] = Form.useForm<VendorData>();
-  const [editForm] = Form.useForm<VendorData>();
+  const closeModal = () => {
+    setOpenModal(false);
+    setEditingVendor(null);
+    form.resetFields();
+  };
 
-  /* ---------- Columns ---------- */
-  const columns: ColumnsType<VendorData> = [
-    { title: "Vendor Name", dataIndex: "name", width: 200 },
-    { title: "Phone", dataIndex: "phone", width: 150 },
-    { title: "Email", dataIndex: "email", width: 200 },
-    { title: "GST No", dataIndex: "gstNumber", width: 180 },
-    { title: "Shop", dataIndex: "shop", width: 150 },
-    { title: "Opening Balance", dataIndex: "openingBalance", width: 150 },
+  /* ================= TABLE COLUMNS ================= */
+
+  const columns = [
     {
-      title: "Active",
+      title: "Name",
+      dataIndex: "name",
+      render: (name: string) => <strong>{name}</strong>,
+    },
+    {
+      title: "Phone",
+      dataIndex: "phone",
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+    },
+    {
+      title: "GST Number",
+      dataIndex: "gstNumber",
+    },
+    {
+      title: "Status",
       dataIndex: "isActive",
-      width: 100,
-      render: (val: boolean) => (val ? "Yes" : "No"),
+      render: (isActive: boolean) =>
+        isActive ? (
+          <span className="text-green-600 font-medium">Active</span>
+        ) : (
+          <span className="text-red-600 font-medium">Inactive</span>
+        ),
     },
     {
       title: "Action",
-      width: 150,
-      render: (_, record) => (
+      render: (_: any, record: Vendor) => (
         <div className="flex gap-2">
-          <Button
-            size="small"
-            type="primary"
+          <button
             onClick={() => {
               setEditingVendor(record);
-              editForm.setFieldsValue(record);
-              setOpenEditModal(true);
+              form.setFieldsValue(record);
+              setOpenModal(true);
             }}
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white"
           >
             Edit
-          </Button>
-          <Button size="small" danger>
-            Delete
-          </Button>
+          </button>
+
+          <Popconfirm
+            title="Are you sure delete?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
+              Delete
+            </button>
+          </Popconfirm>
         </div>
       ),
     },
   ];
 
   return (
-    <div>
-      {/* Header */}
+    <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Vendors</h2>
-        <Button type="primary" onClick={() => setOpenAddModal(true)}>
+
+        <Button
+          type="primary"
+          onClick={() => {
+            setEditingVendor(null);
+            form.resetFields();
+            setOpenModal(true);
+          }}
+        >
           Add Vendor
         </Button>
       </div>
 
-      {/* Table */}
-      <div className={styles.customTable}>
-        <Table<VendorData>
-          bordered
-          columns={columns}
-          dataSource={[]} // design only
-          rowKey="key"
-          pagination={false}
-          scroll={{ x: "max-content" }}
-          style={{ marginTop: 16 }}
-        />
-      </div>
+      <Table
+        rowKey="_id"
+        columns={columns}
+        dataSource={data}
+        loading={isLoading}
+        bordered
+        className="erp-table"
+      />
 
-      {/* Add Vendor Modal */}
+      {/* ================= MODAL ================= */}
+
       <Modal
-        title="Add Vendor"
-        open={openAddModal}
-        onCancel={() => setOpenAddModal(false)}
-        footer={null}
-        destroyOnClose
+        open={openModal}
+        title={editingVendor ? "Edit Vendor" : "Create Vendor"}
+        onCancel={closeModal}
+        onOk={() => form.submit()}
       >
-        <Form
-          layout="vertical"
-          form={addForm}
-          initialValues={{ isActive: true, openingBalance: 0 }}
-          onFinish={(values) => {
-            console.log("ADD VENDOR:", values);
-            setOpenAddModal(false);
-            addForm.resetFields();
-          }}
-        >
-          <Form.Item name="name" label="Vendor Name" rules={[{ required: true }]}>
-            <Input />
+        <Form form={form} layout="vertical" onFinish={handleSave}>
+          <Form.Item
+            name="name"
+            label="Vendor Name"
+            rules={[{ required: true, message: "Enter vendor name" }]}
+          >
+            <Input placeholder="Enter vendor name" />
           </Form.Item>
 
-          <Form.Item name="phone" label="Phone">
-            <Input />
+          <Form.Item
+            name="phone"
+            label="Phone"
+            rules={[{ required: true, message: "Enter phone number" }]}
+          >
+            <Input placeholder="Enter phone number" />
           </Form.Item>
 
           <Form.Item name="email" label="Email">
-            <Input type="email" />
-          </Form.Item>
-
-          <Form.Item name="gstNumber" label="GST Number">
-            <Input placeholder="29ABCDE1234F1Z5" />
+            <Input placeholder="Enter email" />
           </Form.Item>
 
           <Form.Item name="address" label="Address">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select placeholder="Select shop">
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="openingBalance" label="Opening Balance">
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Save
-          </Button>
-        </Form>
-      </Modal>
-
-      {/* Edit Vendor Modal */}
-      <Modal
-        title="Edit Vendor"
-        open={openEditModal}
-        onCancel={() => {
-          setOpenEditModal(false);
-          setEditingVendor(null);
-        }}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          layout="vertical"
-          form={editForm}
-          onFinish={(values) => {
-            console.log("UPDATE VENDOR:", { ...editingVendor, ...values });
-            setOpenEditModal(false);
-          }}
-        >
-          <Form.Item name="name" label="Vendor Name" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="phone" label="Phone">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="email" label="Email">
-            <Input type="email" />
+            <Input.TextArea placeholder="Enter address" />
           </Form.Item>
 
           <Form.Item name="gstNumber" label="GST Number">
-            <Input />
+            <Input placeholder="Enter GST number" />
           </Form.Item>
 
-          <Form.Item name="address" label="Address">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select>
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="openingBalance" label="Opening Balance">
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
+          <Form.Item
+            name="isActive"
+            label="Active Status"
+            valuePropName="checked"
+            initialValue={true}
+          >
             <Switch />
           </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Update
-          </Button>
         </Form>
       </Modal>
-    </div>
+    </>
   );
-};
+}
 
-export default Vendors;
+export default VendorPage;
