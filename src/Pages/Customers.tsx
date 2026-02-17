@@ -1,239 +1,213 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Button, Form, Modal, Table, Popconfirm, Input, Switch } from "antd";
+import { toast } from "react-toastify";
 import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  Switch,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { createStyles } from "antd-style";
+  useGetCustomers,
+  useCreateCustomer,
+  useUpdateCustomer,
+  useDeleteCustomer,
+} from "../Utils/customerApi";
+import type { Customer } from "../Utils/customerApi";
 
-const { Option } = Select;
+function Customers() {
+  const [openModal, setOpenModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [form] = Form.useForm();
 
-/* ---------- Styles ---------- */
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
+  const { data, isLoading, refetch } = useGetCustomers();
+  const createMutation = useCreateCustomer();
+  const updateMutation = useUpdateCustomer();
+  const deleteMutation = useDeleteCustomer();
+
+  /* ================================
+     Save (Create / Update)
+  ================================= */
+
+  const handleSave = (values: any) => {
+    if (editingCustomer) {
+      updateMutation.mutate(
+        { id: editingCustomer._id, data: values },
+        {
+          onSuccess: () => {
+            toast.success("Customer updated");
+            closeModal();
+            refetch();
+          },
+          onError: (err: any) =>
+            toast.error(err?.response?.data?.message || "Update failed"),
+        },
+      );
+    } else {
+      createMutation.mutate(values, {
+        onSuccess: () => {
+          toast.success("Customer created");
+          closeModal();
+          refetch();
+        },
+        onError: (err: any) =>
+          toast.error(err?.response?.data?.message || "Create failed"),
+      });
     }
-  `,
-}));
+  };
 
-/* ---------- Types ---------- */
-interface CustomerData {
-  key: string;
-  name: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  shop: string;
-  openingBalance: number;
-  creditLimit: number;
-  isActive: boolean;
-}
+  /* ================================
+     Delete
+  ================================= */
 
-/* ---------- Component ---------- */
-const Customers: React.FC = () => {
-  const { styles } = useStyle();
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Customer deleted");
+        refetch();
+      },
+      onError: () => toast.error("Delete failed"),
+    });
+  };
 
-  const [openAddModal, setOpenAddModal] = useState(false);
-  const [openEditModal, setOpenEditModal] = useState(false);
-  const [editingCustomer, setEditingCustomer] =
-    useState<CustomerData | null>(null);
+  /* ================================
+     Close Modal
+  ================================= */
 
-  const [addForm] = Form.useForm<CustomerData>();
-  const [editForm] = Form.useForm<CustomerData>();
+  const closeModal = () => {
+    setOpenModal(false);
+    setEditingCustomer(null);
+    form.resetFields();
+  };
 
-  /* ---------- Columns ---------- */
-  const columns: ColumnsType<CustomerData> = [
-    { title: "Customer Name", dataIndex: "name", width: 200 },
-    { title: "Phone", dataIndex: "phone", width: 150 },
-    { title: "Email", dataIndex: "email", width: 200 },
-    { title: "Shop", dataIndex: "shop", width: 150 },
-    { title: "Opening Balance", dataIndex: "openingBalance", width: 150 },
-    { title: "Credit Limit", dataIndex: "creditLimit", width: 150 },
+  /* ================================
+     Table Columns
+  ================================= */
+
+  const columns = [
     {
-      title: "Active",
+      title: "Name",
+      dataIndex: "name",
+    },
+    {
+      title: "Phone",
+      dataIndex: "phone",
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+    },
+    {
+      title: "GST Number",
+      dataIndex: "gstNumber",
+    },
+    {
+      title: "Status",
       dataIndex: "isActive",
-      width: 100,
-      render: (val: boolean) => (val ? "Yes" : "No"),
+      render: (isActive: boolean) => (
+        <span style={{ color: isActive ? "green" : "red" }}>
+          {isActive ? "Active" : "Inactive"}
+        </span>
+      ),
     },
     {
       title: "Action",
-      width: 150,
-      render: (_, record) => (
+      render: (_: any, record: Customer) => (
         <div className="flex gap-2">
-          <Button
-            size="small"
-            type="primary"
+          <button
             onClick={() => {
               setEditingCustomer(record);
-              editForm.setFieldsValue(record);
-              setOpenEditModal(true);
+              form.setFieldsValue(record);
+              setOpenModal(true);
             }}
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white"
           >
             Edit
-          </Button>
-          <Button size="small" danger>
-            Delete
-          </Button>
+          </button>
+
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
+              Delete
+            </button>
+          </Popconfirm>
         </div>
       ),
     },
   ];
 
+  /* ================================
+     JSX
+  ================================= */
+
   return (
-    <div>
-      {/* Header */}
+    <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Customers</h2>
-        <Button type="primary" onClick={() => setOpenAddModal(true)}>
+        <Button
+          type="primary"
+          onClick={() => {
+            setEditingCustomer(null);
+            form.resetFields();
+            setOpenModal(true);
+          }}
+        >
           Add Customer
         </Button>
       </div>
 
-      {/* Table */}
-      <Table<CustomerData>
-        bordered
-        className={styles.customTable}
+      <Table
+        rowKey="_id"
         columns={columns}
-        dataSource={[]}
-        pagination={false}
-        scroll={{ x: "max-content" }}
-        style={{ marginTop: 16 }}
+        dataSource={data}
+        loading={isLoading}
+        bordered
+        className="erp-table"
       />
 
-      {/* Add Customer Modal */}
       <Modal
-        title="Add Customer"
-        open={openAddModal}
-        onCancel={() => setOpenAddModal(false)}
-        footer={null}
-        destroyOnClose
+        open={openModal}
+        title={editingCustomer ? "Edit Customer" : "Create Customer"}
+        onCancel={closeModal}
+        onOk={() => form.submit()}
       >
-        <Form
-          layout="vertical"
-          form={addForm}
-          initialValues={{ isActive: true }}
-          onFinish={(values) => {
-            console.log("ADD CUSTOMER:", values);
-            setOpenAddModal(false);
-            addForm.resetFields();
-          }}
-        >
-          <Form.Item name="name" label="Customer Name" rules={[{ required: true }]}>
+        <Form form={form} layout="vertical" onFinish={handleSave}>
+          <Form.Item
+            name="name"
+            label="Customer Name"
+            rules={[{ required: true, message: "Enter name" }]}
+          >
             <Input />
           </Form.Item>
 
-          <Form.Item name="phone" label="Phone">
+          <Form.Item
+            name="phone"
+            label="Phone"
+            rules={[{ required: true, message: "Enter phone number" }]}
+          >
             <Input />
           </Form.Item>
 
           <Form.Item name="email" label="Email">
-            <Input type="email" />
-          </Form.Item>
-
-          <Form.Item name="address" label="Address">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select placeholder="Select shop">
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="openingBalance" label="Opening Balance">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="creditLimit" label="Credit Limit">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Save
-          </Button>
-        </Form>
-      </Modal>
-
-      {/* Edit Customer Modal */}
-      <Modal
-        title="Edit Customer"
-        open={openEditModal}
-        onCancel={() => {
-          setOpenEditModal(false);
-          setEditingCustomer(null);
-        }}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          layout="vertical"
-          form={editForm}
-          onFinish={(values) => {
-            console.log("UPDATE CUSTOMER:", {
-              ...editingCustomer,
-              ...values,
-            });
-            setOpenEditModal(false);
-          }}
-        >
-          <Form.Item name="name" label="Customer Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
 
-          <Form.Item name="phone" label="Phone">
+          <Form.Item name="address" label="Address">
             <Input />
           </Form.Item>
 
-          <Form.Item name="email" label="Email">
-            <Input type="email" />
+          <Form.Item name="gstNumber" label="GST Number">
+            <Input />
           </Form.Item>
 
-          <Form.Item name="address" label="Address">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-
-          <Form.Item name="shop" label="Shop" rules={[{ required: true }]}>
-            <Select>
-              <Option value="Main Shop">Main Shop</Option>
-              <Option value="Branch Shop">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="openingBalance" label="Opening Balance">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="creditLimit" label="Credit Limit">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked">
+          <Form.Item
+            name="isActive"
+            label="Active"
+            valuePropName="checked"
+            initialValue={true}
+          >
             <Switch />
           </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Update
-          </Button>
         </Form>
       </Modal>
-    </div>
+    </>
   );
-};
+}
 
 export default Customers;
