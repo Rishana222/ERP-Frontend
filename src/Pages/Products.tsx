@@ -96,8 +96,9 @@ function ProductPage() {
       render: (_: any, record: any) => record.unit?.name || "-",
     },
     { title: "Tax", render: (_: any, record: any) => record.tax?.name || "-" },
-    { title: "Price", dataIndex: "price" },
+    // { title: "Price", dataIndex: "price" },
     { title: "Stock", dataIndex: "stock" },
+    { title: "Selling Price", dataIndex: "sellingPrice" },
     {
       title: "Actions",
       render: (_: any, record: any) => (
@@ -205,9 +206,9 @@ function ProductPage() {
             </Select>
           </Form.Item>
 
-          <Form.Item name="price" label="Price" rules={[{ required: true }]}>
+          {/* <Form.Item name="price" label="Price" rules={[{ required: true }]}>
             <Input type="number" />
-          </Form.Item>
+          </Form.Item> */}
           <Form.Item name="stock" label="Stock">
             <Input type="number" min={0} />
           </Form.Item>

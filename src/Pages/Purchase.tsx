@@ -1,152 +1,298 @@
-
 import React, { useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, InputNumber } from "antd";
-import type { TableColumnsType } from "antd";
-import { createStyles } from "antd-style";
+import {
+  Table,
+  Modal,
+  Form,
+  InputNumber,
+  Select,
+  message,
+  Button,
+  Popconfirm,
+} from "antd";
 
-const { Option } = Select;
+import {
+  useGetPurchases,
+  useCreatePurchase,
+  useUpdatePurchase,
+  useDeletePurchase,
+} from "../Utils/purchaseAPI";
+import type { Purchase,
+  PurchasePayload,} from "../Utils/purchaseAPI"
 
+import { useGetVendors } from "../Utils/vendorApi";
+import { useGetProducts } from "../Utils/productApi";
 
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
-    }
-  `,
-}));
+const PurchasePage: React.FC = () => {
+  const { data: purchases = [], isLoading } = useGetPurchases();
+  const { data: vendors = [] } = useGetVendors();
+  const { data: products = [] } = useGetProducts();
 
+  const createMutation = useCreatePurchase();
+  const updateMutation = useUpdatePurchase();
+  const deleteMutation = useDeletePurchase();
 
-interface ProductItem {
-  key: React.Key;
-  product: string;
-  quantity: number;
-  purchasePrice: number;
-  taxPercent?: number;
-  total?: number;
-}
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
 
-interface PurchaseData {
-  key: React.Key;
-  shop: string;
-  vendor: string;
-  totalAmount: number;
-  paidAmount: number;
-  balanceAmount: number;
-  purchaseDate: string;
-}
-
-const columns: TableColumnsType<PurchaseData> = [
-  { title: "Shop", dataIndex: "shop", width: 150 },
-  { title: "Vendor", dataIndex: "vendor", width: 150 },
-  { title: "Total Amount", dataIndex: "totalAmount", width: 120 },
-  { title: "Paid Amount", dataIndex: "paidAmount", width: 120 },
-  { title: "Balance Amount", dataIndex: "balanceAmount", width: 120 },
-  { title: "Purchase Date", dataIndex: "purchaseDate", width: 150 },
-  {
-    title: "Action",
-    fixed: "end",
-    width: 150,
-    render: () => (
-      <div className="flex gap-2">
-        <a>Edit</a>
-        <a style={{ color: "red" }}>Delete</a>
-      </div>
-    ),
-  },
-];
-
-const Purchase: React.FC = () => {
-  const { styles } = useStyle();
-
-  const [openModal, setOpenModal] = useState(false);
   const [form] = Form.useForm();
 
-  // Dummy empty data for now
-  const dataSource: PurchaseData[] = [];
+  /* ================= OPEN MODAL ================= */
 
-  const handleAddPurchase = (values: any) => {
-    console.log("New Purchase:", values);
-    setOpenModal(false);
-    form.resetFields();
+  const openModal = (purchase?: Purchase) => {
+    if (purchase) {
+      setEditingPurchase(purchase);
+      form.setFieldsValue({
+        ...purchase,
+        vendor: purchase.vendor?._id,
+        items: purchase.items.map((item) => ({
+          ...item,
+          product: item.product?._id,
+        })),
+      });
+    } else {
+      setEditingPurchase(null);
+      form.resetFields();
+    }
+    setModalVisible(true);
   };
 
-  return (
-    <div>
-      {/* Header + Add Button */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Purchases</h2>
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" onClick={() => setOpenModal(true)}>
-            Add Purchase
-          </Button>
+  /* ================= SAVE ================= */
+
+  const handleSave = async (values: any) => {
+    try {
+      const items = values.items.map((item: any) => ({
+        ...item,
+        total: item.quantity * item.costPrice,
+      }));
+
+      const grandTotal = items.reduce(
+        (sum: number, item: any) => sum + item.total,
+        0,
+      );
+
+      const payload: PurchasePayload = {
+        vendor: values.vendor,
+        items,
+        grandTotal,
+      };
+
+      if (editingPurchase) {
+        await updateMutation.mutateAsync({
+          id: editingPurchase._id,
+          data: payload,
+        });
+        message.success("Purchase updated");
+      } else {
+        await createMutation.mutateAsync(payload);
+        message.success("Purchase created");
+      }
+
+      setModalVisible(false);
+      form.resetFields();
+    } catch {
+      message.error("Error saving purchase");
+    }
+  };
+
+  /* ================= DELETE ================= */
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      message.success("Deleted successfully");
+    } catch {
+      message.error("Delete failed");
+    }
+  };
+
+  /* ================= TABLE COLUMNS ================= */
+
+  const columns = [
+    {
+      title: "Vendor",
+      dataIndex: ["vendor", "name"],
+    },
+    {
+      title: "Grand Total",
+      dataIndex: "grandTotal",
+      render: (val: number) => `₹${val}`,
+    },
+    {
+      title: "Actions",
+      render: (_: any, record: Purchase) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => openModal(record)}
+            className="px-3 py-1 text-sm rounded bg-[#00264d] hover:bg-[#001a33] text-white"
+          >
+            Edit
+          </button>
+
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 text-sm rounded bg-red-600 hover:bg-red-700 text-white">
+              Delete
+            </button>
+          </Popconfirm>
         </div>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <div className="flex justify-between mb-4">
+        <h2>Purchases</h2>
+        <Button type="primary" onClick={() => openModal()}>
+          Add Purchase
+        </Button>
       </div>
 
-      {/* Purchase Table */}
-      <Table<PurchaseData>
-        bordered
-        className={styles.customTable}
+      <Table
+        dataSource={purchases}
         columns={columns}
-        dataSource={dataSource}
-        scroll={{ x: "max-content" }}
-        pagination={false}
-        rowKey="key"
+        rowKey="_id"
+        loading={isLoading}
+        bordered
+        className="erp-table"
+        expandable={{
+          expandedRowRender: (record: Purchase) => (
+            <Table
+              dataSource={record.items}
+              pagination={false}
+              rowKey={(item) => item.product?._id}
+              bordered
+              className="erp-table"
+              columns={[
+                {
+                  title: "Product",
+                  dataIndex: ["product", "name"],
+                },
+                {
+                  title: "Quantity",
+                  dataIndex: "quantity",
+                },
+                {
+                  title: "Cost Price",
+                  dataIndex: "costPrice",
+                  render: (v: number) => `₹${v}`,
+                },
+                {
+                  title: "Selling Price",
+                  dataIndex: "sellingPrice",
+                  render: (v: number) => `₹${v}`,
+                },
+                {
+                  title: "Line Total",
+                  dataIndex: "total",
+                  render: (v: number) => `₹${v}`,
+                },
+              ]}
+              summary={() => (
+                <Table.Summary.Row>
+                  <Table.Summary.Cell index={0} colSpan={4}>
+                    <strong>Grand Total</strong>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={4}>
+                    <strong>₹{record.grandTotal}</strong>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              )}
+            />
+          ),
+        }}
       />
 
-      {/* Add Purchase Modal */}
-      <Modal
-        title="Add Purchase"
-        open={openModal}
-        onCancel={() => setOpenModal(false)}
-        footer={null}
-        destroyOnClose
-      >
-        <Form layout="vertical" form={form} onFinish={handleAddPurchase}>
-          <Form.Item label="Shop" name="shop" rules={[{ required: true }]}>
-            <Select placeholder="Select Shop">
-              <Option value="shop1">Main Shop</Option>
-              <Option value="shop2">Branch Shop</Option>
-            </Select>
-          </Form.Item>
+      {/* ================= MODAL ================= */}
 
+      <Modal
+        title={editingPurchase ? "Edit Purchase" : "Add Purchase"}
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        onOk={() => form.submit()}
+        width={900}
+      >
+        <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item label="Vendor" name="vendor" rules={[{ required: true }]}>
             <Select placeholder="Select Vendor">
-              <Option value="vendor1">Vendor 1</Option>
-              <Option value="vendor2">Vendor 2</Option>
+              {vendors.map((v: any) => (
+                <Select.Option key={v._id} value={v._id}>
+                  {v.name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
 
-          <Form.Item label="Total Amount" name="totalAmount" rules={[{ required: true }]}>
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
+          <Form.List name="items">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <div key={key} className="grid grid-cols-5 gap-2 mb-3">
+                    <Form.Item
+                      {...restField}
+                      name={[name, "product"]}
+                      rules={[{ required: true }]}
+                    >
+                      <Select placeholder="Product">
+                        {products.map((p: any) => (
+                          <Select.Option key={p._id} value={p._id}>
+                            {p.name}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
 
-          <Form.Item label="Paid Amount" name="paidAmount" rules={[{ required: true }]}>
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, "quantity"]}
+                      rules={[{ required: true }]}
+                    >
+                      <InputNumber
+                        style={{ width: "100%" }}
+                        placeholder="Qty"
+                      />
+                    </Form.Item>
 
-          <Form.Item label="Balance Amount" name="balanceAmount" rules={[{ required: true }]}>
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, "costPrice"]}
+                      rules={[{ required: true }]}
+                    >
+                      <InputNumber
+                        style={{ width: "100%" }}
+                        placeholder="Cost"
+                      />
+                    </Form.Item>
 
-          <Form.Item label="Purchase Date" name="purchaseDate" rules={[{ required: true }]}>
-            <DatePicker style={{ width: "100%" }} />
-          </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, "sellingPrice"]}
+                      rules={[{ required: true }]}
+                    >
+                      <InputNumber
+                        style={{ width: "100%" }}
+                        placeholder="Selling"
+                      />
+                    </Form.Item>
 
-          <Form.Item label="Note" name="note">
-            <Input.TextArea placeholder="Optional note" />
-          </Form.Item>
+                    <Button danger onClick={() => remove(name)}>
+                      Remove
+                    </Button>
+                  </div>
+                ))}
 
-          <Button type="primary" htmlType="submit" className="w-full">
-            Save Purchase
-          </Button>
+                <Button type="dashed" onClick={() => add()} block>
+                  + Add Item
+                </Button>
+              </>
+            )}
+          </Form.List>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 
-export default Purchase;
+export default PurchasePage;
