@@ -16,16 +16,17 @@ import {
   useUpdatePurchase,
   useDeletePurchase,
 } from "../Utils/purchaseAPI";
-import type { Purchase,
-  PurchasePayload,} from "../Utils/purchaseAPI"
+import type { Purchase, PurchasePayload } from "../Utils/purchaseAPI";
 
 import { useGetVendors } from "../Utils/vendorApi";
 import { useGetProducts } from "../Utils/productApi";
+import { useGetUnits } from "../Utils/UnitAPI"; // Dynamic units
 
 const PurchasePage: React.FC = () => {
   const { data: purchases = [], isLoading } = useGetPurchases();
   const { data: vendors = [] } = useGetVendors();
   const { data: products = [] } = useGetProducts();
+  const { data: units = [] } = useGetUnits();
 
   const createMutation = useCreatePurchase();
   const updateMutation = useUpdatePurchase();
@@ -33,20 +34,20 @@ const PurchasePage: React.FC = () => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
-
   const [form] = Form.useForm();
 
-  /* ================= OPEN MODAL ================= */
-
+ 
   const openModal = (purchase?: Purchase) => {
     if (purchase) {
       setEditingPurchase(purchase);
       form.setFieldsValue({
-        ...purchase,
         vendor: purchase.vendor?._id,
         items: purchase.items.map((item) => ({
-          ...item,
           product: item.product?._id,
+          unit: item.unit?._id, 
+          quantity: item.quantity,
+          costPrice: item.costPrice,
+          sellingPrice: item.sellingPrice,
         })),
       });
     } else {
@@ -56,8 +57,7 @@ const PurchasePage: React.FC = () => {
     setModalVisible(true);
   };
 
-  /* ================= SAVE ================= */
-
+  
   const handleSave = async (values: any) => {
     try {
       const items = values.items.map((item: any) => ({
@@ -89,12 +89,12 @@ const PurchasePage: React.FC = () => {
 
       setModalVisible(false);
       form.resetFields();
-    } catch {
+    } catch (err) {
+      console.error(err);
       message.error("Error saving purchase");
     }
   };
 
-  /* ================= DELETE ================= */
 
   const handleDelete = async (id: string) => {
     try {
@@ -105,24 +105,54 @@ const PurchasePage: React.FC = () => {
     }
   };
 
-  /* ================= TABLE COLUMNS ================= */
+
+  const dataSource = purchases.map((purchase: any) => ({
+    key: purchase._id,
+    vendorName: purchase.vendor?.name,
+    productSummary: purchase.items
+      .map(
+        (item: any) =>
+          `${item.product?.name} (${item.quantity} ${item.unit?.name || "pcs"})`,
+      )
+      .join(", "),
+    costPriceSummary: purchase.items
+      .map((item: any) => item.costPrice ?? 0)
+      .join(", "),
+    sellingPriceSummary: purchase.items
+      .map((item: any) => item.sellingPrice ?? 0)
+      .join(", "),
+    lineTotal: purchase.items.reduce(
+      (sum: number, item: any) => sum + (item.quantity * item.costPrice || 0),
+      0,
+    ),
+    fullPurchase: purchase,
+  }));
+
 
   const columns = [
+    { title: "Vendor", dataIndex: "vendorName" },
+    { title: "Products", dataIndex: "productSummary" },
     {
-      title: "Vendor",
-      dataIndex: ["vendor", "name"],
+      title: "Cost Price",
+      dataIndex: "costPriceSummary",
+      render: (val: any) => `₹${val}`,
     },
     {
-      title: "Grand Total",
-      dataIndex: "grandTotal",
+      title: "Selling Price",
+      dataIndex: "sellingPriceSummary",
+      render: (val: any) => `₹${val}`,
+    },
+    {
+      title: "Line Total",
+      dataIndex: "lineTotal",
       render: (val: number) => `₹${val}`,
     },
     {
       title: "Actions",
-      render: (_: any, record: Purchase) => (
+      render: (_: any, record: any) => (
         <div className="flex gap-2">
           <button
-            onClick={() => openModal(record)}
+            onClick={() => openModal(record.fullPurchase)}
             className="px-3 py-1 text-sm rounded bg-[#00264d] hover:bg-[#001a33] text-white"
           >
             Edit
@@ -130,7 +160,7 @@ const PurchasePage: React.FC = () => {
 
           <Popconfirm
             title="Are you sure?"
-            onConfirm={() => handleDelete(record._id)}
+            onConfirm={() => handleDelete(record.fullPurchase._id)}
           >
             <button className="px-3 py-1 text-sm rounded bg-red-600 hover:bg-red-700 text-white">
               Delete
@@ -151,62 +181,15 @@ const PurchasePage: React.FC = () => {
       </div>
 
       <Table
-        dataSource={purchases}
+        dataSource={dataSource}
         columns={columns}
-        rowKey="_id"
+        rowKey={(record) => record.key}
         loading={isLoading}
         bordered
         className="erp-table"
-        expandable={{
-          expandedRowRender: (record: Purchase) => (
-            <Table
-              dataSource={record.items}
-              pagination={false}
-              rowKey={(item) => item.product?._id}
-              bordered
-              className="erp-table"
-              columns={[
-                {
-                  title: "Product",
-                  dataIndex: ["product", "name"],
-                },
-                {
-                  title: "Quantity",
-                  dataIndex: "quantity",
-                },
-                {
-                  title: "Cost Price",
-                  dataIndex: "costPrice",
-                  render: (v: number) => `₹${v}`,
-                },
-                {
-                  title: "Selling Price",
-                  dataIndex: "sellingPrice",
-                  render: (v: number) => `₹${v}`,
-                },
-                {
-                  title: "Line Total",
-                  dataIndex: "total",
-                  render: (v: number) => `₹${v}`,
-                },
-              ]}
-              summary={() => (
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={4}>
-                    <strong>Grand Total</strong>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={4}>
-                    <strong>₹{record.grandTotal}</strong>
-                  </Table.Summary.Cell>
-                </Table.Summary.Row>
-              )}
-            />
-          ),
-        }}
       />
 
-      {/* ================= MODAL ================= */}
-
+   
       <Modal
         title={editingPurchase ? "Edit Purchase" : "Add Purchase"}
         open={modalVisible}
@@ -229,7 +212,7 @@ const PurchasePage: React.FC = () => {
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }) => (
-                  <div key={key} className="grid grid-cols-5 gap-2 mb-3">
+                  <div key={key} className="grid grid-cols-6 gap-2 mb-3">
                     <Form.Item
                       {...restField}
                       name={[name, "product"]}
@@ -239,6 +222,20 @@ const PurchasePage: React.FC = () => {
                         {products.map((p: any) => (
                           <Select.Option key={p._id} value={p._id}>
                             {p.name}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                      {...restField}
+                      name={[name, "unit"]}
+                      rules={[{ required: true }]}
+                    >
+                      <Select placeholder="Unit">
+                        {units.map((u: any) => (
+                          <Select.Option key={u._id} value={u._id}>
+                            {u.name}
                           </Select.Option>
                         ))}
                       </Select>
@@ -262,7 +259,7 @@ const PurchasePage: React.FC = () => {
                     >
                       <InputNumber
                         style={{ width: "100%" }}
-                        placeholder="Cost"
+                        placeholder="Cost Price"
                       />
                     </Form.Item>
 
@@ -273,7 +270,7 @@ const PurchasePage: React.FC = () => {
                     >
                       <InputNumber
                         style={{ width: "100%" }}
-                        placeholder="Selling"
+                        placeholder="Selling Price"
                       />
                     </Form.Item>
 
