@@ -19,7 +19,6 @@ function ProductPage() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [form] = Form.useForm();
 
-  /* ================= API CALLS ================= */
   const { data: products, isLoading } = useGetProducts();
   const { data: categories } = useGetCategories();
   const { data: subCategories } = useGetSubCategories();
@@ -30,7 +29,6 @@ function ProductPage() {
   const updateMutation = useUpdateProduct();
   const deleteMutation = useDeleteProduct();
 
-  /* ================= HANDLERS ================= */
 
   const handleSave = (values: any) => {
     if (editingProduct) {
@@ -81,7 +79,7 @@ function ProductPage() {
     form.resetFields();
   };
 
-  /* ================= TABLE COLUMNS ================= */
+
 
   const columns = [
     { title: "Name", dataIndex: "name" },
@@ -99,6 +97,7 @@ function ProductPage() {
     },
     { title: "Tax", render: (_: any, record: any) => record.tax?.name || "-" },
     { title: "Price", dataIndex: "price" },
+    { title: "Stock", dataIndex: "stock" },
     {
       title: "Actions",
       render: (_: any, record: any) => (
@@ -208,6 +207,9 @@ function ProductPage() {
 
           <Form.Item name="price" label="Price" rules={[{ required: true }]}>
             <Input type="number" />
+          </Form.Item>
+          <Form.Item name="stock" label="Stock">
+            <Input type="number" min={0} />
           </Form.Item>
         </Form>
       </Modal>

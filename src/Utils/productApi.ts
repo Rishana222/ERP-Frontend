@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "./Axios";
 
-/* ================= TYPES ================= */
+
 
 export interface Product {
   _id: string;
   name: string;
   price: number;
+  stock: number;
   category: { _id: string; name: string };
   subCategory?: { _id: string; name: string };
   unit?: { _id: string; name: string };
@@ -23,7 +24,6 @@ export interface ProductPayload {
   price: number;
 }
 
-/* ================= GET ================= */
 
 const getProducts = async (): Promise<Product[]> => {
   const res = await axiosInstance.get("/api/products/get");
@@ -36,7 +36,6 @@ export const useGetProducts = () =>
     queryFn: getProducts,
   });
 
-/* ================= CREATE ================= */
 
 const createProduct = (data: ProductPayload) =>
   axiosInstance.post("/api/products/create", data);
@@ -51,7 +50,6 @@ export const useCreateProduct = () => {
   });
 };
 
-/* ================= UPDATE ================= */
 
 const updateProduct = ({ id, data }: { id: string; data: ProductPayload }) =>
   axiosInstance.put(`/api/products/update/${id}`, data);
@@ -66,7 +64,6 @@ export const useUpdateProduct = () => {
   });
 };
 
-/* ================= DELETE ================= */
 
 const deleteProduct = (id: string) =>
   axiosInstance.delete(`/api/products/delete/${id}`);
