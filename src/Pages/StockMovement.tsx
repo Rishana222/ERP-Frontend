@@ -25,18 +25,30 @@ function StockHistoryPage() {
         if (type === "ADJUSTMENT") color = "orange";
         if (type === "SALE_CANCEL") color = "blue";
         if (type === "PURCHASE_CANCEL") color = "volcano";
+        if (type === "PURCHASE_RETURN") color = "red";
 
         return <Tag color={color}>{type}</Tag>;
       },
     },
     {
       title: "Quantity",
-      dataIndex: "quantity",
-      render: (qty: number) => (
-        <span style={{ color: qty > 0 ? "green" : "red" }}>
-          {qty > 0 ? `+${qty}` : qty}
-        </span>
-      ),
+      render: (_: any, record: any) => {
+        const { quantity, type } = record;
+
+        const negativeTypes = [
+          "SALE",
+          "PURCHASE_RETURN",
+          "ADJUSTMENT_MINUS"
+        ];
+
+        const isNegative = negativeTypes.includes(type);
+
+        return (
+          <span style={{ color: isNegative ? "red" : "green" }}>
+            {isNegative ? `-${quantity}` : `+${quantity}`}
+          </span>
+        );
+      },
     },
     {
       title: "Balance",
