@@ -38,18 +38,21 @@ function StockHistoryPage() {
         const negativeTypes = [
           "SALE",
           "PURCHASE_RETURN",
-          "ADJUSTMENT_MINUS"
+          "PURCHASE_CANCEL"
         ];
 
         const isNegative = negativeTypes.includes(type);
 
+        const displayQty = Math.abs(quantity);
+
         return (
           <span style={{ color: isNegative ? "red" : "green" }}>
-            {isNegative ? `-${quantity}` : `+${quantity}`}
+            {isNegative ? `-${displayQty}` : `+${displayQty}`}
           </span>
         );
       },
     },
+
     {
       title: "Balance",
       dataIndex: "balance",
