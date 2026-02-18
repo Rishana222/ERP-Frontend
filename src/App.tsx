@@ -137,7 +137,7 @@ const App = () => {
               icon: <DatabaseOutlined />,
               label: "Inventory",
               children: [
-                { key: "/stock", label: "Stock Overview" },
+               
                 { key: "/stock-movement", label: "Stock History" },
               ],
             },
