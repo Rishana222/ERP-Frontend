@@ -21,7 +21,6 @@ function PurchaseReturnPage() {
   const [items, setItems] = useState<any[]>([]);
   const [form] = Form.useForm();
 
-  // Auto-fill items when purchase selected
   useEffect(() => {
     if (selectedPurchase) {
       const purchase = purchases.find((p) => p._id === selectedPurchase);
@@ -41,7 +40,6 @@ function PurchaseReturnPage() {
     }
   }, [selectedPurchase, purchases]);
 
-  // Live Grand Total calculation
   const grandTotal = useMemo(() => {
     return items.reduce((sum, i) => sum + (i.total || 0), 0);
   }, [items]);
@@ -58,7 +56,7 @@ function PurchaseReturnPage() {
     }
 
     const payload = {
-      purchase: selectedPurchase, // matches backend field
+      purchase: selectedPurchase, 
       items: items
         .filter((i) => i.qty > 0)
         .map((i) => ({ product: i.productId, quantity: i.qty })),
@@ -138,7 +136,7 @@ function PurchaseReturnPage() {
 
   return (
     <>
-      {/* Header */}
+     
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Purchase Returns</h2>
         <Button type="primary" onClick={() => setIsAddModalOpen(true)}>
@@ -146,16 +144,16 @@ function PurchaseReturnPage() {
         </Button>
       </div>
 
-      {/* Table */}
+    
       <Table
         rowKey="_id"
         columns={columns}
         dataSource={Array.isArray(returnsData) ? returnsData : []}
         loading={isLoading}
         bordered
+         className="erp-table"
       />
 
-      {/* View Modal */}
       <Modal
         title="Purchase Return Details"
         open={isViewModalOpen}
@@ -197,12 +195,13 @@ function PurchaseReturnPage() {
               </div>
             </div>
 
-            {/* Items Table */}
+          
             <Table
               rowKey="_id"
               pagination={false}
               dataSource={selectedReturn.items || []}
               bordered
+              className="erp-table"
               columns={[
                 {
                   title: "Product",
@@ -227,7 +226,7 @@ function PurchaseReturnPage() {
               ]}
             />
 
-            {/* Grand Total */}
+        
             <div className="flex justify-end">
               <div className="bg-blue-50 px-6 py-3 rounded border text-right">
                 <h3 className="text-lg font-semibold">
@@ -240,7 +239,7 @@ function PurchaseReturnPage() {
         )}
       </Modal>
 
-      {/* Add Modal */}
+     
       <Modal
         title="Add Purchase Return"
         open={isAddModalOpen}

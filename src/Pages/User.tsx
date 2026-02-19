@@ -134,6 +134,7 @@ const UserPage = () => {
         rowKey="_id"
         loading={isLoading}
         bordered
+         className="erp-table"
       />
 
       <Modal

@@ -71,6 +71,7 @@ function StockHistoryPage() {
         dataSource={Array.isArray(data) ? data : []}
         loading={isLoading}
         bordered
+         className="erp-table"
       />
     </>
   );
