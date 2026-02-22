@@ -129,7 +129,7 @@ const App = () => {
               children: [
                 { key: "/purchase", label: "New Purchase" },
                 { key: "/purchase-return", label: "Purchase Return" },
-                { key: "/payments", label: "Vendor Payments" },
+                { key: "/vendor-payments", label: "Vendor Payments" },
               ],
             },
             {
@@ -148,6 +148,7 @@ const App = () => {
               children: [
                 { key: "/payments", label: "Payments" },
                 { key: "/transactions", label: "Transactions" },
+                { key: "/vendor-ledger", label: "Vendor Ledger" },
               ],
             },
             {

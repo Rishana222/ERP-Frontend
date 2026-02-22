@@ -26,10 +26,12 @@ import SalesReturn from "./Pages/SalesReturn";
 import Receipts from "./Pages/Receipts";
 import Purchase from "./Pages/Purchase";
 import PurchaseReturn from "./Pages/PurchaseReturn";
+import VendorPayment from "./Pages/VendorPayment";
 import Stock from "./Pages/Stock";
 import StockMovement from "./Pages/StockMovement";
 import Payments from "./Pages/Payments";
 import Transactions from "./Pages/Transactions";
+import VendorAccount from "./Pages/VendorAccount";
 import Expenses from "./Pages/Expenses";
 import ExpenseCategories from "./Pages/ExpenseCategories";
 import User from "./Pages/User";
@@ -73,10 +75,12 @@ const router = createBrowserRouter([
       { path: "receipts", element: <Receipts /> },
       { path: "purchase", element: <Purchase /> },
       { path: "purchase-return", element: <PurchaseReturn /> },
+      { path: "vendor-payments", element: <VendorPayment /> },
       { path: "stock", element: <Stock /> },
       { path: "stock-movement", element: <StockMovement /> },
       { path: "payments", element: <Payments /> },
       { path: "transactions", element: <Transactions /> },
+      { path: "vendor-ledger", element: <VendorAccount /> },
       { path: "expenses", element: <Expenses /> },
       { path: "expense-categories", element: <ExpenseCategories /> },
       { path: "user", element: <User /> },
@@ -89,23 +93,23 @@ const router = createBrowserRouter([
 const queryClient = new QueryClient();
 const theme = {
   token: {
-  
-    colorPrimary: "#00264d", 
-    
-    
-    colorBgLayout: "#F0F2F5",     
-    colorBgContainer: " #e6e6e6",   
 
-   
-    colorText: "#1F2937",         
-    colorTextSecondary: "#4B5563", 
-    colorTextHeading: "#111827",   
-    
-    
+    colorPrimary: "#00264d",
+
+
+    colorBgLayout: "#F0F2F5",
+    colorBgContainer: " #e6e6e6",
+
+
+    colorText: "#1F2937",
+    colorTextSecondary: "#4B5563",
+    colorTextHeading: "#111827",
+
+
     colorBorder: "#D1D5DB",
     colorBorderSecondary: "#E5E7EB",
 
-    borderRadius: 4,              
+    borderRadius: 4,
     fontSize: 14,
   },
 
@@ -119,35 +123,35 @@ const theme = {
       hoverBorderColor: "#9CA3AF",
     },
 
- 
+
     Select: {
       colorBgContainer: "#FFFFFF",
       colorText: "#1F2937",
-      optionSelectedBg: "#E6F0FF", 
+      optionSelectedBg: "#E6F0FF",
       optionActiveBg: "#F3F4F6",
     },
 
 
     Form: {
-      labelColor: "#374151",      
+      labelColor: "#374151",
       labelFontSize: 14,
       verticalLabelPadding: "0 0 6px",
     },
 
 
-   Table: {
-      headerBg: "#00264d",        
-      headerColor: "#FFFFFF",     
+    Table: {
+      headerBg: "#00264d",
+      headerColor: "#FFFFFF",
       headerSortActiveBg: "#0056D2",
       headerBorderRadius: 4,
       borderColor: "#999999",
     },
-  
+
     Empty: {
-      colorTextDescription: "#6B7280", 
+      colorTextDescription: "#6B7280",
     },
 
-  
+
     Modal: {
       contentBg: "#FFFFFF",
       headerBg: "#FFFFFF",
