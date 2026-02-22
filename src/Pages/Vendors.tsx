@@ -50,7 +50,7 @@ function VendorPage() {
     }
   };
 
- 
+
 
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id, {
@@ -62,7 +62,7 @@ function VendorPage() {
     });
   };
 
- 
+
 
   const closeModal = () => {
     setOpenModal(false);
@@ -86,10 +86,6 @@ function VendorPage() {
       title: "Email",
       dataIndex: "email",
     },
-  {
-   title: "Paid Amount",
-   dataIndex: "paidAmount",
-},
     {
       title: "GST Number",
       dataIndex: "gstNumber",
@@ -158,7 +154,7 @@ function VendorPage() {
         className="erp-table"
       />
 
-   
+
 
       <Modal
         open={openModal}
@@ -190,24 +186,22 @@ function VendorPage() {
           <Form.Item name="address" label="Address">
             <Input.TextArea placeholder="Enter address" />
           </Form.Item>
-          <Form.Item label="Paid Amount" name="paidAmount">
-          <Input type="number" />
-        </Form.Item>
+     
 
-        <Form.Item name="gstNumber" label="GST Number">
-          <Input placeholder="Enter GST number" />
-        </Form.Item>
+          <Form.Item name="gstNumber" label="GST Number">
+            <Input placeholder="Enter GST number" />
+          </Form.Item>
 
-        <Form.Item
-          name="isActive"
-          label="Active Status"
-          valuePropName="checked"
-          initialValue={true}
-        >
-          <Switch />
-        </Form.Item>
-      </Form>
-    </Modal >
+          <Form.Item
+            name="isActive"
+            label="Active Status"
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal >
     </>
   );
 }
