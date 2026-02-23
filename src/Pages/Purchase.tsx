@@ -174,7 +174,7 @@ const PurchasePage: React.FC = () => {
   return (
     <>
       <div className="flex justify-between mb-4">
-        <h2>Purchases</h2>
+        <h2 className="text-xl font-semibold">Purchases</h2>
         <Button type="primary" onClick={() => openModal()}>
           Add Purchase
         </Button>

@@ -1,4 +1,4 @@
-// VendorpaymentAPI.ts
+// Utils/VendorpaymentAPI.ts
 import { axiosInstance } from "../Utils/Axios";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -24,15 +24,18 @@ export const createVendorPayment = (data: VendorPaymentPayload) =>
   axiosInstance.post("/vendor-payment", data);
 
 // GET
-export const getVendorPayments = async (vendorId: string): Promise<VendorPayment[]> => {
+export const getVendorPayments = async (
+  vendorId: string,
+): Promise<VendorPayment[]> => {
   const res = await axiosInstance.get(`/vendor-payment/${vendorId}`);
-  return res.data.data; // <--- return array directly
+  return res.data.data; // ✅ array return
 };
 
 // Hooks
 export const useCreateVendorPayment = () =>
   useMutation<VendorPayment, Error, VendorPaymentPayload>({
-    mutationFn: (data) => createVendorPayment(data).then((res) => res.data.data),
+    mutationFn: (data) =>
+      createVendorPayment(data).then((res) => res.data.data),
   });
 
 export const useGetVendorPayments = (vendorId: string) =>
