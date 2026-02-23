@@ -26,6 +26,7 @@ function StockHistoryPage() {
         if (type === "SALE_CANCEL") color = "blue";
         if (type === "PURCHASE_CANCEL") color = "volcano";
         if (type === "PURCHASE_RETURN") color = "red";
+        if (type === "SALE_RETURN") color = "green";
 
         return <Tag color={color}>{type}</Tag>;
       },
