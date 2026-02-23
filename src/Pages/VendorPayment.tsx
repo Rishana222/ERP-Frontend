@@ -1,14 +1,27 @@
 import { useState } from "react";
-import { Table, Button, Modal, Form, Input, DatePicker, Select, message } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  DatePicker,
+  Select,
+  message,
+} from "antd";
 import moment from "moment";
 import type { Moment } from "moment";
+
 import { useGetVendors } from "../Utils/vendorApi";
 import {
   useCreateVendorPayment,
   useGetVendorPayments,
-
 } from "../Utils/VendorpaymentAPI";
-import type { VendorPaymentPayload ,} from "../Utils/VendorpaymentAPI";
+import type {
+  VendorPaymentPayload,
+  VendorPayment,
+} from "../Utils/VendorpaymentAPI";
+
 const { Option } = Select;
 
 const VendorPayments = () => {
@@ -16,13 +29,15 @@ const VendorPayments = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  
-  const { data: vendors } = useGetVendors();
+  // Vendors
+  const { data: vendors = [] } = useGetVendors();
 
-  
-  const { data: paymentsData = [], refetch } = useGetVendorPayments(selectedVendor || "");
+  // Payments (ARRAY)
+  const { data: paymentsData = [], refetch } = useGetVendorPayments(
+    selectedVendor || "",
+  );
 
-  
+  // Create payment
   const { mutate: addPayment, isLoading } = useCreateVendorPayment();
 
   const openModal = (vendorId: string) => {
@@ -46,7 +61,7 @@ const VendorPayments = () => {
 
       addPayment(payload, {
         onSuccess: () => {
-          message.success("Payment added!");
+          message.success("Payment added successfully");
           setIsModalOpen(false);
           refetch();
         },
@@ -55,73 +70,78 @@ const VendorPayments = () => {
         },
       });
     } catch (err) {
-      console.log("Validation Failed:", err);
+      console.log(err);
     }
   };
 
-  
+  // ---------------- VENDOR TABLE ----------------
   const vendorColumns = [
     { title: "Name", dataIndex: "name" },
     { title: "Phone", dataIndex: "phone" },
     { title: "Email", dataIndex: "email" },
     { title: "GST", dataIndex: "gstNumber" },
     {
-  title: "Paid Amount",
-  dataIndex: "paidAmount",
-  render: (_: any, record: any) => {
-    const totalPaid = paymentsData?.data
-      ?.filter((p: any) => p.vendor === record._id)
-      .reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
+      title: "Paid Amount",
+      render: (_: any, record: any) => {
+        const totalPaid =
+          paymentsData
+            .filter((p: VendorPayment) => p.vendor === record._id)
+            .reduce((sum, p) => sum + p.amount, 0) || 0;
 
-    return `₹${totalPaid}`;
-  },
-},
+        return `₹${totalPaid}`;
+      },
+    },
     {
       title: "Action",
       render: (_: any, record: any) => (
         <Button type="primary" onClick={() => openModal(record._id)}>
-           Add Payment
+          Add Payment
         </Button>
       ),
     },
   ];
 
-  
+  // ---------------- PAYMENT TABLE ----------------
   const paymentColumns = [
     {
       title: "Date",
       dataIndex: "paymentDate",
       render: (date: string) => moment(date).format("DD-MM-YYYY"),
     },
-    { title: "Amount", dataIndex: "amount", render: (amt: number) => `₹${amt}` },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      render: (amt: number) => `₹${amt}`,
+    },
     { title: "Mode", dataIndex: "paymentMode" },
     { title: "Note", dataIndex: "note" },
   ];
 
   return (
-    <div>
-      <h2>Vendor Payments</h2>
+    <div >
+      <h2 className="text-xl font-semibold">Vendor Payments</h2>
 
-      
+      {/* Vendor Table */}
       <Table
         rowKey="_id"
-        dataSource={vendors || []}
+        dataSource={vendors}
         columns={vendorColumns}
-        pagination={false}
         bordered
         className="erp-table"
+        pagination={false}
         style={{ marginBottom: 20 }}
       />
 
-    
+      {/* Payments Table */}
       {selectedVendor && (
         <>
-          <h3 style={{ marginTop: 20 }}>
-            Payments for {vendors?.find((v) => v._id === selectedVendor)?.name}
+          <h3 style={{ marginTop: 20 }} className="text-xl font-semibold">
+            Payments for {vendors.find((v) => v._id === selectedVendor)?.name}
           </h3>
+
           <Table
             rowKey="_id"
-            dataSource={paymentsData || []}
+            dataSource={paymentsData}
             columns={paymentColumns}
             bordered
             className="erp-table"
@@ -130,9 +150,9 @@ const VendorPayments = () => {
         </>
       )}
 
-      
+      {/* Add Payment Modal */}
       <Modal
-        title={`Add Payment for ${vendors?.find((v) => v._id === selectedVendor)?.name}`}
+        title="Add Vendor Payment"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={handleSave}
@@ -142,7 +162,7 @@ const VendorPayments = () => {
           <Form.Item
             label="Amount"
             name="amount"
-            rules={[{ required: true, message: "Please enter amount" }]}
+            rules={[{ required: true, message: "Enter amount" }]}
           >
             <Input type="number" />
           </Form.Item>
@@ -150,7 +170,7 @@ const VendorPayments = () => {
           <Form.Item
             label="Payment Date"
             name="paymentDate"
-            rules={[{ required: true, message: "Please select date" }]}
+            rules={[{ required: true }]}
             initialValue={moment()}
           >
             <DatePicker style={{ width: "100%" }} />
@@ -159,11 +179,12 @@ const VendorPayments = () => {
           <Form.Item
             label="Payment Mode"
             name="paymentMode"
-            rules={[{ required: true, message: "Please select mode" }]}
+            rules={[{ required: true }]}
           >
             <Select>
               <Option value="Cash">Cash</Option>
               <Option value="Bank">Bank</Option>
+              <Option value="UPI">UPI</Option>
             </Select>
           </Form.Item>
 
