@@ -29,15 +29,15 @@ const VendorPayments = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  // Vendors
+  
   const { data: vendors = [] } = useGetVendors();
 
-  // Payments (ARRAY)
+
   const { data: paymentsData = [], refetch } = useGetVendorPayments(
     selectedVendor || "",
   );
 
-  // Create payment
+
   const { mutate: addPayment, isLoading } = useCreateVendorPayment();
 
   const openModal = (vendorId: string) => {
@@ -74,7 +74,7 @@ const VendorPayments = () => {
     }
   };
 
-  // ---------------- VENDOR TABLE ----------------
+
   const vendorColumns = [
     { title: "Name", dataIndex: "name" },
     { title: "Phone", dataIndex: "phone" },
@@ -101,7 +101,7 @@ const VendorPayments = () => {
     },
   ];
 
-  // ---------------- PAYMENT TABLE ----------------
+ 
   const paymentColumns = [
     {
       title: "Date",
@@ -121,7 +121,6 @@ const VendorPayments = () => {
     <div >
       <h2 className="text-xl font-semibold">Vendor Payments</h2>
 
-      {/* Vendor Table */}
       <Table
         rowKey="_id"
         dataSource={vendors}
@@ -132,7 +131,6 @@ const VendorPayments = () => {
         style={{ marginBottom: 20 }}
       />
 
-      {/* Payments Table */}
       {selectedVendor && (
         <>
           <h3 style={{ marginTop: 20 }} className="text-xl font-semibold">
@@ -150,7 +148,6 @@ const VendorPayments = () => {
         </>
       )}
 
-      {/* Add Payment Modal */}
       <Modal
         title="Add Vendor Payment"
         open={isModalOpen}
