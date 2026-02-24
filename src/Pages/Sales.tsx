@@ -1,134 +1,287 @@
 import React, { useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, InputNumber, DatePicker } from "antd";
-import type { TableColumnsType } from "antd";
-import { createStyles } from "antd-style";
+import {
+  Table,
+  Modal,
+  Form,
+  InputNumber,
+  Select,
+  message,
+  Popconfirm,
+} from "antd";
 
-const { Option } = Select;
+import {
+  useGetSales,
+  useCreateSale,
+  useUpdateSale,
+  useDeleteSale,
+} from "../Utils/salesAPI";
 
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
-    }
-  `,
-}));
+import { useGetCustomers } from "../Utils/customerApi";
+import { useGetProducts } from "../Utils/productApi";
+import { useGetUnits } from "../Utils/UnitAPI";
 
-interface SalesData {
-  key: React.Key;
-  invoice: string;
-  customer: string;
-  shop: string;
-  totalAmount: number;
-  discount: number;
-  tax: number;
-  netAmount: number;
-  paymentStatus: string;
-  saleDate: string;
-}
+import type { Sale, SalePayload } from "../Utils/salesAPI";
 
-const columns: TableColumnsType<SalesData> = [
-  { title: "Invoice", dataIndex: "invoice", width: 150 },
-  { title: "Customer", dataIndex: "customer", width: 150 },
-  { title: "Shop", dataIndex: "shop", width: 150 },
-  { title: "Total Amount", dataIndex: "totalAmount", width: 120 },
-  { title: "Discount", dataIndex: "discount", width: 100 },
-  { title: "Tax", dataIndex: "tax", width: 100 },
-  { title: "Net Amount", dataIndex: "netAmount", width: 120 },
-  { title: "Payment Status", dataIndex: "paymentStatus", width: 120 },
-  { title: "Sale Date", dataIndex: "saleDate", width: 150 },
-  {
-    title: "Action",
-    fixed: "end",
-    width: 120,
-    render: () => <a style={{ color: "red" }}>Delete</a>,
-  },
-];
+const SalesPage: React.FC = () => {
+  const { data: sales = [], isLoading } = useGetSales();
+  const { data: customers = [] } = useGetCustomers();
+  const { data: products = [] } = useGetProducts();
+  const { data: units = [] } = useGetUnits();
 
-const SalesDashboard: React.FC = () => {
-  const { styles } = useStyle();
-  const [items, ] = useState<SalesData[]>([]); 
+  const createMutation = useCreateSale();
+  const updateMutation = useUpdateSale();
+  const deleteMutation = useDeleteSale();
 
-  const [openModal, setOpenModal] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [form] = Form.useForm();
 
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Sales Dashboard</h2>
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" onClick={() => setOpenModal(true)}>
-            Add Sale
-          </Button>
+  /* ================= OPEN MODAL (SAFE) ================= */
+  const openModal = (sale?: Sale) => {
+    if (sale) {
+      setEditingSale(sale);
+      form.setFieldsValue({
+        ...sale,
+        customer:
+          sale.customer && typeof sale.customer === "object"
+            ? sale.customer._id
+            : sale.customer || undefined,
+        items: (sale.items || []).map((i: any) => ({
+          ...i,
+          product:
+            i.product && typeof i.product === "object"
+              ? i.product._id
+              : i.product || undefined,
+          unit:
+            i.unit && typeof i.unit === "object"
+              ? i.unit._id
+              : i.unit || undefined,
+        })),
+      });
+    } else {
+      setEditingSale(null);
+      form.resetFields();
+    }
+    setModalVisible(true);
+  };
+
+  /* ================= CALCULATIONS ================= */
+  const calculateGrandTotal = (items: any[]) => {
+    const grandTotal = (items || []).reduce(
+      (sum, item) => sum + (item?.total || 0),
+      0
+    );
+    form.setFieldsValue({ grandTotal });
+  };
+
+  const calculateItemTotal = (index: number) => {
+    const items = form.getFieldValue("items") || [];
+    const item = items[index];
+    if (item?.quantity && item?.sellingPrice) {
+      item.total = item.quantity * item.sellingPrice;
+      items[index] = item;
+      form.setFieldsValue({ items });
+      calculateGrandTotal(items);
+    }
+  };
+
+  /* ================= SAVE ================= */
+  const handleSave = async (values: SalePayload) => {
+    try {
+      if (editingSale) {
+        await updateMutation.mutateAsync({
+          id: editingSale._id,
+          data: values,
+        });
+        message.success("Sale updated successfully");
+      } else {
+        await createMutation.mutateAsync(values);
+        message.success("Sale created successfully");
+      }
+      setModalVisible(false);
+      form.resetFields();
+    } catch {
+      message.error("Error saving sale");
+    }
+  };
+
+  /* ================= DELETE ================= */
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      message.success("Sale deleted successfully");
+    } catch {
+      message.error("Error deleting sale");
+    }
+  };
+
+  /* ================= TABLE (NULL SAFE) ================= */
+  const columns = [
+    {
+      title: "Customer",
+      dataIndex: "customer",
+      key: "customer",
+      render: (c: any) => {
+        if (!c) return "-";
+        if (typeof c === "object") return c.name || "-";
+        return c;
+      },
+    },
+    {
+      title: "Items",
+      key: "items",
+      render: (_: any, record: Sale) => record.items?.length || 0,
+    },
+    {
+      title: "Grand Total",
+      dataIndex: "grandTotal",
+      key: "grandTotal",
+    },
+    {
+      title: "Actions",
+      key: "action",
+      render: (_: any, record: Sale) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => openModal(record)}
+            className="px-3 py-1 bg-[#00264d] text-white rounded"
+          >
+            Edit
+          </button>
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+          >
+            <button className="px-3 py-1 bg-red-600 text-white rounded">
+              Delete
+            </button>
+          </Popconfirm>
         </div>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <div className="flex justify-between mb-4">
+        <h2 className="text-xl font-semibold">Sales</h2>
+        <button
+          onClick={() => openModal()}
+          className="px-4 py-2 bg-[#00264d] text-white rounded"
+        >
+          Add Sale
+        </button>
       </div>
 
-      <Table<SalesData>
-        bordered
-        className={styles.customTable}
+      <Table
+        rowKey="_id"
+        loading={isLoading}
+        dataSource={sales}
         columns={columns}
-        dataSource={items} 
-        scroll={{ x: "max-content" }}
-        pagination={false}
-        rowKey="key"
+        bordered
       />
 
       <Modal
-        title="Add Sale"
-        open={openModal}
-        onCancel={() => setOpenModal(false)}
-        footer={null}
-        destroyOnClose
+        open={modalVisible}
+        title={editingSale ? "Edit Sale" : "Add Sale"}
+        onCancel={() => {
+          setModalVisible(false);
+          form.resetFields();
+          setEditingSale(null);
+        }}
+        onOk={() => form.submit()}
+        width={900}
       >
-        <Form layout="vertical" form={form}>
-          <Form.Item label="Invoice" name="invoice">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Customer" name="customer">
-            <Select placeholder="Select Customer">
-              <Option value="cust1">Customer 1</Option>
-              <Option value="cust2">Customer 2</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="Shop" name="shop">
-            <Select placeholder="Select Shop">
-              <Option value="shop1">Main Shop</Option>
-              <Option value="shop2">Branch Shop</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="Total Amount" name="totalAmount">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item label="Discount" name="discount">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item label="Tax" name="tax">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item label="Net Amount" name="netAmount">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item label="Payment Status" name="paymentStatus">
-            <Select>
-              <Option value="paid">Paid</Option>
-              <Option value="partial">Partial</Option>
-              <Option value="unpaid">Unpaid</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="Sale Date" name="saleDate">
-            <DatePicker style={{ width: "100%" }} />
+        <Form form={form} layout="vertical" onFinish={handleSave}>
+          {/* CUSTOMER */}
+          <Form.Item name="customer" label="Customer" rules={[{ required: true }]}>
+            <Select
+              placeholder="Select customer"
+              options={customers.map((c: any) => ({
+                label: c.name,
+                value: c._id,
+              }))}
+            />
           </Form.Item>
 
-          <Button type="primary" className="w-full mt-2">
-            Save Sale
-          </Button>
+          {/* ITEMS */}
+          <Form.List name="items">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ name }) => (
+                  <div key={name} className="border p-3 mb-3 rounded">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Form.Item name={[name, "product"]} label="Product" rules={[{ required: true }]}>
+                        <Select
+                          options={products.map((p: any) => ({
+                            label: p.name,
+                            value: p._id,
+                          }))}
+                        />
+                      </Form.Item>
+
+                      <Form.Item name={[name, "unit"]} label="Unit" rules={[{ required: true }]}>
+                        <Select
+                          options={units.map((u: any) => ({
+                            label: u.name,
+                            value: u._id,
+                          }))}
+                        />
+                      </Form.Item>
+
+                      <Form.Item name={[name, "quantity"]} label="Quantity" rules={[{ required: true }]}>
+                        <InputNumber
+                          className="w-full"
+                          min={1}
+                          onChange={() => calculateItemTotal(name)}
+                        />
+                      </Form.Item>
+
+                      <Form.Item name={[name, "sellingPrice"]} label="Selling Price" rules={[{ required: true }]}>
+                        <InputNumber
+                          className="w-full"
+                          min={0}
+                          onChange={() => calculateItemTotal(name)}
+                        />
+                      </Form.Item>
+
+                      <Form.Item name={[name, "total"]} label="Total">
+                        <InputNumber className="w-full" disabled />
+                      </Form.Item>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="text-red-600 mt-2"
+                      onClick={() => {
+                        remove(name);
+                        calculateGrandTotal(form.getFieldValue("items") || []);
+                      }}
+                    >
+                      Remove Item
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => add()}
+                  className="px-3 py-1 bg-green-600 text-white rounded"
+                >
+                  Add Item
+                </button>
+              </>
+            )}
+          </Form.List>
+
+          {/* GRAND TOTAL */}
+          <Form.Item name="grandTotal" label="Grand Total">
+            <InputNumber className="w-full" disabled />
+          </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 
-export default SalesDashboard;
+export default SalesPage;
