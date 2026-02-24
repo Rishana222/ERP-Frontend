@@ -1,152 +1,328 @@
-import React, { useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, InputNumber } from "antd";
-import type { TableColumnsType } from "antd";
-import { createStyles } from "antd-style";
+import { Table, Button, Modal, Form, Select, InputNumber, message } from "antd";
+import { useState, useEffect, useMemo } from "react";
+import {
+  useGetSaleReturns,
+  useCreateSaleReturn,
+} from "../Utils/salesReturnAPI";
+import { useGetSales } from "../Utils/salesAPI";
 
 const { Option } = Select;
 
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
-    }
-  `,
-}));
+function SaleReturnPage() {
+  const { data: returnsData = [], isLoading } = useGetSaleReturns();
+  const { data: sales = [] } = useGetSales();
+  const createSaleReturn = useCreateSaleReturn();
 
-interface SalesReturnData {
-  key: React.Key;
-  returnNumber: string;
-  sale: string;
-  customer: string;
-  shop: string;
-  totalReturnAmount: number;
-  refundType: string;
-  refundStatus: string;
-  status: string;
-  returnDate: string;
-}
+  const [selectedReturn, setSelectedReturn] = useState<any>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-const columns: TableColumnsType<SalesReturnData> = [
-  { title: "Return Number", dataIndex: "returnNumber", width: 150 },
-  { title: "Sale ID", dataIndex: "sale", width: 150 },
-  { title: "Customer", dataIndex: "customer", width: 150 },
-  { title: "Shop", dataIndex: "shop", width: 150 },
-  { title: "Total Return", dataIndex: "totalReturnAmount", width: 120 },
-  { title: "Refund Type", dataIndex: "refundType", width: 120 },
-  { title: "Refund Status", dataIndex: "refundStatus", width: 120 },
-  { title: "Status", dataIndex: "status", width: 120 },
-  { title: "Return Date", dataIndex: "returnDate", width: 150 },
-  {
-    title: "Action",
-    fixed: "end",
-    width: 120,
-    render: () => <a style={{ color: "red" }}>Delete</a>,
-  },
-];
-
-const SalesReturn: React.FC = () => {
-  const { styles } = useStyle();
-  const [returns] = useState<SalesReturnData[]>([]); 
-
-  
-  const [openModal, setOpenModal] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<string | null>(null);
+  const [items, setItems] = useState<any[]>([]);
   const [form] = Form.useForm();
 
+
+  useEffect(() => {
+    if (!selectedSale) {
+      setItems([]);
+      return;
+    }
+
+    const sale = sales.find((s: any) => s?._id === selectedSale);
+
+    if (!sale || !Array.isArray(sale.items)) {
+      setItems([]);
+      return;
+    }
+
+    setItems(
+      sale.items
+        .filter((i: any) => i?.product)
+        .map((i: any) => ({
+          product: i.product?.name ?? "Unknown Product",
+          productId: i.product?._id ?? null,
+          qty: 0,
+          sellingPrice: i.sellingPrice ?? 0,
+          total: 0,
+        })),
+    );
+  }, [selectedSale, sales]);
+
+
+  const grandTotal = useMemo(
+    () => items.reduce((sum, i) => sum + (i.total || 0), 0),
+    [items],
+  );
+
+
+  const handleView = (record: any) => {
+    setSelectedReturn(record);
+    setIsViewModalOpen(true);
+  };
+
+  const handleSaveReturn = () => {
+    if (!selectedSale) {
+      message.error("Please select a sale");
+      return;
+    }
+
+    const sale = sales.find((s: any) => s?._id === selectedSale);
+
+    const payload = {
+      sale: selectedSale,
+      customer:
+        typeof sale?.customer === "object"
+          ? sale.customer?._id
+          : sale?.customer,
+      items: items
+        .filter((i) => i.qty > 0 && i.productId)
+        .map((i) => ({
+          product: i.productId,
+          quantity: i.qty,
+          sellingPrice: i.sellingPrice,
+          total: i.qty * i.sellingPrice,
+        })),
+      grandTotal,
+      note: form.getFieldValue("note") || "",
+    };
+
+    if (!payload.items.length) {
+      message.error("Please enter quantity for at least one product");
+      return;
+    }
+
+    createSaleReturn.mutate(payload, {
+      onSuccess: () => {
+        message.success("Sale Return added successfully");
+        setIsAddModalOpen(false);
+        setSelectedSale(null);
+        setItems([]);
+        form.resetFields();
+      },
+      onError: (err: any) =>
+        message.error(err?.message || "Failed to add sale return"),
+    });
+  };
+
+ 
+  const columns = [
+    {
+      title: "Date",
+      dataIndex: "createdAt",
+      render: (d: string) =>
+        d ? new Date(d).toLocaleDateString("en-IN") : "-",
+    },
+    {
+      title: "Return ID",
+      dataIndex: "_id",
+      render: (id: string) => id?.slice(-6).toUpperCase(),
+    },
+    {
+      title: "Sale",
+      dataIndex: "sale",
+      render: (s: any) =>
+        typeof s === "object"
+          ? (s?.ref ?? s?._id?.slice(-6).toUpperCase() ?? "-")
+          : "-",
+    },
+    {
+      title: "Customer",
+      render: (_: any, r: any) =>
+        typeof r.customer === "object" ? (r.customer?.name ?? "-") : "-",
+    },
+    {
+      title: "Total Qty",
+      render: (_: any, r: any) =>
+        r?.items?.reduce(
+          (sum: number, i: any) => sum + (i?.quantity || 0),
+          0,
+        ) || 0,
+    },
+    {
+      title: "Grand Total",
+      dataIndex: "grandTotal",
+      render: (v: number) => `₹ ${v?.toLocaleString("en-IN") || 0}`,
+    },
+    {
+      title: "Action",
+      render: (_: any, r: any) => (
+        <Button type="link" onClick={() => handleView(r)}>
+          View
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <div>
+    <>
+
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Sales Return </h2>
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" onClick={() => setOpenModal(true)}>
-            Add Sales Return
-          </Button>
-        </div>
+        <h2 className="text-xl font-semibold">Sale Returns</h2>
+        <Button type="primary" onClick={() => setIsAddModalOpen(true)}>
+          Add Sale Return
+        </Button>
       </div>
 
-      <Table<SalesReturnData>
-        bordered
-        className={styles.customTable}
+ 
+      <Table
+        rowKey="_id"
         columns={columns}
-        dataSource={returns} 
-        scroll={{ x: "max-content" }}
-        pagination={false}
-        rowKey="key"
+        dataSource={Array.isArray(returnsData) ? returnsData : []}
+        loading={isLoading}
+        bordered
+        className="erp-table"
       />
 
-  
       <Modal
-        title="Add Sales Return"
-        open={openModal}
-        onCancel={() => setOpenModal(false)}
+        title="Sale Return Details"
+        open={isViewModalOpen}
+        onCancel={() => setIsViewModalOpen(false)}
         footer={null}
-        destroyOnClose
+        width={900}
+      >
+        {selectedReturn && (
+          <div className="space-y-6">
+            <div className="bg-gray-50 p-4 rounded border">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <p>
+                  <strong>Return No:</strong>{" "}
+                  {selectedReturn._id?.slice(-6).toUpperCase()}
+                </p>
+                <p>
+                  <strong>Sale No:</strong>{" "}
+                  {selectedReturn.sale?.ref ??
+                    selectedReturn.sale?._id?.slice(-6).toUpperCase() ??
+                    "-"}
+                </p>
+                <p>
+                  <strong>Customer:</strong>{" "}
+                  {selectedReturn.customer?.name ?? "-"}
+                </p>
+                <p>
+                  <strong>Date:</strong>{" "}
+                  {selectedReturn.createdAt
+                    ? new Date(selectedReturn.createdAt).toLocaleDateString(
+                        "en-IN",
+                      )
+                    : "-"}
+                </p>
+                <p className="col-span-2">
+                  <strong>Note:</strong> {selectedReturn.note || "-"}
+                </p>
+              </div>
+            </div>
+
+            <Table
+              rowKey="_id"
+              pagination={false}
+              dataSource={selectedReturn.items || []}
+              bordered
+              className="erp-table"
+              columns={[
+                {
+                  title: "Product",
+                  render: (_: any, i: any) => i.product?.name ?? "-",
+                },
+                { title: "Quantity", dataIndex: "quantity" },
+                {
+                  title: "Price",
+                  dataIndex: "sellingPrice",
+                  render: (p: number) => `₹ ${p?.toLocaleString("en-IN") || 0}`,
+                },
+                {
+                  title: "Total",
+                  dataIndex: "total",
+                  render: (t: number) => `₹ ${t?.toLocaleString("en-IN") || 0}`,
+                },
+              ]}
+            />
+
+            <div className="flex justify-end">
+              <div className="bg-blue-50 px-6 py-3 rounded border text-right">
+                <h3 className="text-lg font-semibold">
+                  Grand Total: ₹{" "}
+                  {selectedReturn.grandTotal?.toLocaleString("en-IN") || 0}
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        title="Add Sale Return"
+        open={isAddModalOpen}
+        onCancel={() => setIsAddModalOpen(false)}
+        footer={null}
+        width={800}
       >
         <Form layout="vertical" form={form}>
-          <Form.Item label="Return Number" name="returnNumber">
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="Sale ID" name="sale">
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="Customer" name="customer">
-            <Select placeholder="Select Customer">
-              <Option value="cust1">Customer 1</Option>
-              <Option value="cust2">Customer 2</Option>
+          <Form.Item
+            label="Select Sale"
+            rules={[{ required: true, message: "Please select a sale" }]}
+          >
+            <Select
+              placeholder="Select sale"
+              onChange={(val) => setSelectedSale(val)}
+            >
+              {sales.map((s: any) => (
+                <Option key={s._id} value={s._id}>
+                  {typeof s.customer === "object"
+                    ? s.customer?.name
+                    : "Unnamed Sale"}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
-          <Form.Item label="Shop" name="shop">
-            <Select placeholder="Select Shop">
-              <Option value="shop1">Main Shop</Option>
-              <Option value="shop2">Branch Shop</Option>
-            </Select>
-          </Form.Item>
+          {items.length > 0 && (
+            <Table
+              rowKey="productId"
+              pagination={false}
+              dataSource={items}
+              bordered
+              columns={[
+                { title: "Product", dataIndex: "product" },
+                {
+                  title: "Quantity",
+                  render: (_: any, r: any, idx: number) => (
+                    <InputNumber
+                      min={0}
+                      value={r.qty}
+                      onChange={(val) => {
+                        const copy = [...items];
+                        copy[idx].qty = val || 0;
+                        copy[idx].total =
+                          copy[idx].qty * copy[idx].sellingPrice;
+                        setItems(copy);
+                      }}
+                    />
+                  ),
+                },
+                {
+                  title: "Price",
+                  dataIndex: "sellingPrice",
+                  render: (p: number) => `₹ ${p?.toLocaleString("en-IN") || 0}`,
+                },
+                {
+                  title: "Total",
+                  dataIndex: "total",
+                  render: (t: number) => `₹ ${t?.toLocaleString("en-IN") || 0}`,
+                },
+              ]}
+            />
+          )}
 
-          <Form.Item label="Total Return Amount" name="totalReturnAmount">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item label="Refund Type" name="refundType">
-            <Select>
-              <Option value="cash">Cash</Option>
-              <Option value="credit">Credit</Option>
-              <Option value="bank">Bank</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Refund Status" name="refundStatus">
-            <Select>
-              <Option value="pending">Pending</Option>
-              <Option value="completed">Completed</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Status" name="status">
-            <Select>
-              <Option value="draft">Draft</Option>
-              <Option value="approved">Approved</Option>
-              <Option value="rejected">Rejected</Option>
-              <Option value="refunded">Refunded</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Return Date" name="returnDate">
-            <DatePicker style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Button type="primary" className="w-full mt-2">
-            Save Return
-          </Button>
+          <div className="flex justify-between mt-4 items-center">
+            <strong>Grand Total: ₹ {grandTotal.toLocaleString("en-IN")}</strong>
+            <Button type="primary" onClick={handleSaveReturn}>
+              Save Return
+            </Button>
+          </div>
         </Form>
       </Modal>
-    </div>
+    </>
   );
-};
+}
 
-export default SalesReturn;
+export default SaleReturnPage;

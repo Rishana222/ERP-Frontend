@@ -20,7 +20,7 @@ import type { Purchase, PurchasePayload } from "../Utils/purchaseAPI";
 
 import { useGetVendors } from "../Utils/vendorApi";
 import { useGetProducts } from "../Utils/productApi";
-import { useGetUnits } from "../Utils/UnitAPI"; // Dynamic units
+import { useGetUnits } from "../Utils/UnitAPI";
 
 const PurchasePage: React.FC = () => {
   const { data: purchases = [], isLoading } = useGetPurchases();
@@ -36,7 +36,6 @@ const PurchasePage: React.FC = () => {
   const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
   const [form] = Form.useForm();
 
- 
   const openModal = (purchase?: Purchase) => {
     if (purchase) {
       setEditingPurchase(purchase);
@@ -44,7 +43,7 @@ const PurchasePage: React.FC = () => {
         vendor: purchase.vendor?._id,
         items: purchase.items.map((item) => ({
           product: item.product?._id,
-          unit: item.unit?._id, 
+          unit: item.unit?._id,
           quantity: item.quantity,
           costPrice: item.costPrice,
           sellingPrice: item.sellingPrice,
@@ -57,7 +56,6 @@ const PurchasePage: React.FC = () => {
     setModalVisible(true);
   };
 
-  
   const handleSave = async (values: any) => {
     try {
       const items = values.items.map((item: any) => ({
@@ -95,7 +93,6 @@ const PurchasePage: React.FC = () => {
     }
   };
 
-
   const handleDelete = async (id: string) => {
     try {
       await deleteMutation.mutateAsync(id);
@@ -105,14 +102,15 @@ const PurchasePage: React.FC = () => {
     }
   };
 
-
   const dataSource = purchases.map((purchase: any) => ({
     key: purchase._id,
-    vendorName: purchase.vendor?.name,
+    vendorName: purchase.vendor?.name || "-",
     productSummary: purchase.items
       .map(
         (item: any) =>
-          `${item.product?.name} (${item.quantity} ${item.unit?.name || "pcs"})`,
+          `${item.product?.name || "-"} (${item.quantity} ${
+            item.unit?.name || "pcs"
+          })`,
       )
       .join(", "),
     costPriceSummary: purchase.items
@@ -127,7 +125,6 @@ const PurchasePage: React.FC = () => {
     ),
     fullPurchase: purchase,
   }));
-
 
   const columns = [
     { title: "Vendor", dataIndex: "vendorName" },
@@ -189,7 +186,6 @@ const PurchasePage: React.FC = () => {
         className="erp-table"
       />
 
-   
       <Modal
         title={editingPurchase ? "Edit Purchase" : "Add Purchase"}
         open={modalVisible}
@@ -280,9 +276,14 @@ const PurchasePage: React.FC = () => {
                   </div>
                 ))}
 
-                <Button type="dashed" onClick={() => add()} block>
-                  + Add Item
-                </Button>
+         
+                <button
+                  type="button"
+                  onClick={() => add()}
+                  className="px-4 py-1.5 bg-[#00264d] text-white rounded"
+                >
+                  Add Item
+                </button>
               </>
             )}
           </Form.List>

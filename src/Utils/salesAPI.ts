@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "./Axios";
 
-/* ===================== TYPES ===================== */
+
 
 export interface SaleItem {
-  product: string; // Product _id
-  unit: string;    // Unit _id
+  product: string; 
+  unit: string;    
   quantity: number;
   sellingPrice: number;
   total: number;
@@ -13,7 +13,7 @@ export interface SaleItem {
 
 export interface Sale {
   _id: string;
-  customer: string; // Customer _id
+  customer: string; 
   items: SaleItem[];
   grandTotal: number;
   createdAt: string;
@@ -26,7 +26,6 @@ export interface SalePayload {
   grandTotal: number;
 }
 
-/* ===================== GET ALL SALES ===================== */
 
 const getSales = async (): Promise<Sale[]> => {
   const res = await axiosInstance.get("/api/sales/get");
@@ -39,7 +38,7 @@ export const useGetSales = () =>
     queryFn: getSales,
   });
 
-/* ===================== GET SINGLE SALE ===================== */
+
 
 const getSaleById = async (id: string): Promise<Sale> => {
   const res = await axiosInstance.get(`/api/sales/get/${id}`);
@@ -53,7 +52,7 @@ export const useGetSale = (id: string) =>
     enabled: !!id,
   });
 
-/* ===================== CREATE SALE ===================== */
+
 
 const createSale = (data: SalePayload) =>
   axiosInstance.post("/api/sales/create", data);
@@ -68,7 +67,6 @@ export const useCreateSale = () => {
   });
 };
 
-/* ===================== UPDATE SALE ===================== */
 
 const updateSale = ({ id, data }: { id: string; data: SalePayload }) =>
   axiosInstance.put(`/api/sales/update/${id}`, data);
@@ -83,7 +81,7 @@ export const useUpdateSale = () => {
   });
 };
 
-/* ===================== DELETE SALE ===================== */
+
 
 const deleteSale = (id: string) =>
   axiosInstance.delete(`/api/sales/delete/${id}`);
