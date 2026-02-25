@@ -84,9 +84,9 @@ const Invoices: React.FC = () => {
           title="Are you sure to delete this sale?"
           onConfirm={() => handleDelete(record._id)}
         >
-          <Button type="link" danger>
+          <button className="px-3 py-1 text-sm rounded bg-red-600 hover:bg-red-700 text-white">
             Delete
-          </Button>
+          </button>
         </Popconfirm>
       ),
     },

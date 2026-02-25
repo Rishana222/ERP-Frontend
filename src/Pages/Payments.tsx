@@ -1,152 +1,203 @@
-import React, { useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, InputNumber } from "antd";
-import type { TableColumnsType } from "antd";
-import { createStyles } from "antd-style";
+import { useState } from "react";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  DatePicker,
+  Select,
+  message,
+} from "antd";
+import moment from "moment";
+import type { Moment } from "moment";
+
+import { useGetCustomers } from "../Utils/customerApi";
+import {
+  useCreateCustomerPayment,
+  useGetCustomerPayments,
+} from "../Utils/customerPaymentApi";
+import type {
+  CustomerPayment,
+  CustomerPaymentPayload,
+} from "../Utils/customerPaymentApi";
 
 const { Option } = Select;
 
-// --- Styles ---
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
-    }
-  `,
-}));
-
-// --- Table row type ---
-interface PaymentData {
-  key: React.Key;
-  paymentNo: string;
-  vendor?: string;
-  expense?: string;
-  account: string;
-  amount: number;
-  paymentMode: string;
-  transactionDate: string;
-}
-
-const columns: TableColumnsType<PaymentData> = [
-  { title: "Payment No", dataIndex: "paymentNo", width: 120 },
-  { title: "Vendor", dataIndex: "vendor", width: 150 },
-  { title: "Expense", dataIndex: "expense", width: 150 },
-  { title: "Account", dataIndex: "account", width: 150 },
-  { title: "Amount", dataIndex: "amount", width: 120 },
-  { title: "Payment Mode", dataIndex: "paymentMode", width: 120 },
-  { title: "Transaction Date", dataIndex: "transactionDate", width: 150 },
-  {
-    title: "Action",
-    fixed: "end",
-    width: 150,
-    render: () => (
-      <div className="flex gap-2">
-        <a>Edit</a>
-        <a style={{ color: "red" }}>Delete</a>
-      </div>
-    ),
-  },
-];
-
-const Payments: React.FC = () => {
-  const { styles } = useStyle();
-
-  const [openModal, setOpenModal] = useState(false);
+const CustomerPayments = () => {
+  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  // Empty table for now
-  const dataSource: PaymentData[] = [];
+  // Customers list
+  const { data: customers = [] } = useGetCustomers();
 
-  const handleAddPayment = (values: any) => {
-    console.log("New Payment:", values);
-    setOpenModal(false);
+  // Payments for selected customer
+  const { data: paymentsData = [], refetch } = useGetCustomerPayments(
+    selectedCustomer || "",
+  );
+
+  // Create payment
+  const { mutate: addPayment, isLoading } = useCreateCustomerPayment();
+
+  const openModal = (customerId: string) => {
+    setSelectedCustomer(customerId);
     form.resetFields();
+    setIsModalOpen(true);
   };
+
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      if (!selectedCustomer) return;
+
+      const payload: CustomerPaymentPayload = {
+        customer: selectedCustomer,
+        amount: Number(values.amount),
+        paymentDate: (values.paymentDate as Moment).format("YYYY-MM-DD"),
+        paymentMode: values.paymentMode,
+        note: values.note || "",
+      };
+
+      addPayment(payload, {
+        onSuccess: () => {
+          message.success("Payment added successfully");
+          setIsModalOpen(false);
+          refetch();
+        },
+        onError: (err: any) => {
+          message.error(
+            err?.response?.data?.message || "Failed to add payment",
+          );
+        },
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  /* ================= TABLE COLUMNS ================= */
+
+  const customerColumns = [
+    { title: "Name", dataIndex: "name" },
+    { title: "Phone", dataIndex: "phone" },
+    { title: "Email", dataIndex: "email" },
+    {
+      title: "Paid Amount",
+      render: (_: any, record: any) => {
+        const totalPaid =
+          paymentsData
+            .filter((p: CustomerPayment) => p.customer === record._id)
+            .reduce((sum, p) => sum + p.amount, 0) || 0;
+
+        return `₹${totalPaid}`;
+      },
+    },
+    {
+      title: "Action",
+      render: (_: any, record: any) => (
+        <Button type="primary" onClick={() => openModal(record._id)}>
+          Add Payment
+        </Button>
+      ),
+    },
+  ];
+
+  const paymentColumns = [
+    {
+      title: "Date",
+      dataIndex: "paymentDate",
+      render: (date: string) => moment(date).format("DD-MM-YYYY"),
+    },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      render: (amt: number) => `₹${amt}`,
+    },
+    { title: "Mode", dataIndex: "paymentMode" },
+    { title: "Note", dataIndex: "note" },
+  ];
 
   return (
     <div>
-      {/* Header + Add Button */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Payments</h2>
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" onClick={() => setOpenModal(true)}>
-            Add Payment
-          </Button>
-        </div>
-      </div>
+      <h2 className="text-xl font-semibold">Customer Payments</h2>
 
-      {/* Table */}
-      <Table<PaymentData>
+      {/* Customers table */}
+      <Table
+        rowKey="_id"
+        dataSource={customers}
+        columns={customerColumns}
         bordered
-        className={styles.customTable}
-        columns={columns}
-        dataSource={dataSource}
-        scroll={{ x: "max-content" }}
         pagination={false}
-        rowKey="key"
+        style={{ marginBottom: 20 }}
       />
 
-      {/* Add Modal */}
+      {/* Payments table */}
+      {selectedCustomer && (
+        <>
+          <h3 className="text-xl font-semibold" style={{ marginTop: 20 }}>
+            Payments for{" "}
+            {customers.find((c: any) => c._id === selectedCustomer)?.name}
+          </h3>
+
+          <Table
+            rowKey="_id"
+            dataSource={paymentsData}
+            columns={paymentColumns}
+            bordered
+            pagination={false}
+          />
+        </>
+      )}
+
+      {/* Add Payment Modal */}
       <Modal
-        title="Add Payment"
-        open={openModal}
-        onCancel={() => setOpenModal(false)}
-        footer={null}
-        destroyOnClose
+        title="Add Customer Payment"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={handleSave}
+        confirmLoading={isLoading}
       >
-        <Form layout="vertical" form={form} onFinish={handleAddPayment}>
-          <Form.Item label="Payment No" name="paymentNo" rules={[{ required: true }]}>
-            <Input placeholder="Payment Number" />
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ paymentDate: moment() }}
+        >
+          <Form.Item
+            label="Amount"
+            name="amount"
+            rules={[{ required: true, message: "Enter amount" }]}
+          >
+            <Input type="number" min={1} />
           </Form.Item>
 
-          <Form.Item label="Vendor" name="vendor">
-            <Select placeholder="Select Vendor">
-              <Option value="vendor1">Vendor 1</Option>
-              <Option value="vendor2">Vendor 2</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Expense" name="expense">
-            <Select placeholder="Select Expense">
-              <Option value="expense1">Expense 1</Option>
-              <Option value="expense2">Expense 2</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Account" name="account" rules={[{ required: true }]}>
-            <Select placeholder="Select Account">
-              <Option value="account1">Account 1</Option>
-              <Option value="account2">Account 2</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Amount" name="amount" rules={[{ required: true }]}>
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item label="Payment Mode" name="paymentMode" rules={[{ required: true }]}>
-            <Select placeholder="Select Payment Mode">
-              <Option value="Cash">Cash</Option>
-              <Option value="Bank">Bank</Option>
-              <Option value="UPI">UPI</Option>
-              <Option value="Cheque">Cheque</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Transaction Date" name="transactionDate" rules={[{ required: true }]}>
+          <Form.Item
+            label="Payment Date"
+            name="paymentDate"
+            rules={[{ required: true }]}
+          >
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
 
-          <Button type="primary" htmlType="submit" className="w-full">
-            Save Payment
-          </Button>
+          <Form.Item
+            label="Payment Mode"
+            name="paymentMode"
+            rules={[{ required: true }]}
+          >
+            <Select>
+              <Option value="Cash">Cash</Option>
+              <Option value="Bank">Bank</Option>
+              <Option value="UPI">UPI</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Note" name="note">
+            <Input.TextArea rows={2} />
+          </Form.Item>
         </Form>
       </Modal>
     </div>
   );
 };
 
-export default Payments;
+export default CustomerPayments;
