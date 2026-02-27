@@ -38,8 +38,10 @@ import User from "./Pages/User";
 import Roles from "./Pages/Roles";
 import Permissions from "./Pages/Permissions";
 
+
 // Auth Guards
 import { PrivateRoute, LoginProtect } from "./Components/PrivateRoute";
+import CustomerPayment from "./Pages/CustomerPayment";
 
 // Router Configuration
 const router = createBrowserRouter([
@@ -86,6 +88,7 @@ const router = createBrowserRouter([
       { path: "user", element: <User /> },
       { path: "roles", element: <Roles /> },
       { path: "permissions", element: <Permissions /> },
+      {path: "customer-payment", element:<CustomerPayment/>}
     ],
   },
 ]);
