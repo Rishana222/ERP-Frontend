@@ -21,7 +21,7 @@ export interface CustomerPaymentPayload {
 }
 
 export const createCustomerPayment = (data: CustomerPaymentPayload) =>
-  axiosInstance.post("/customer-payment/create", data);
+  axiosInstance.post("/api/customer-payment/create", data);
 
 export const getCustomerPayments = async (customerId: string) => {
   const res = await axiosInstance.get(

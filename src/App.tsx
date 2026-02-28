@@ -120,6 +120,7 @@ const App = () => {
                 { key: "/invoices", label: "Invoices" },
                 { key: "/sales-return", label: "Sales Return" },
                 { key: "/receipts", label: "Receipts" },
+                { key: "/customer-payment", label: "Customer Payments" },
               ],
             },
             {
@@ -136,17 +137,14 @@ const App = () => {
               key: "stock",
               icon: <DatabaseOutlined />,
               label: "Inventory",
-              children: [
-               
-                { key: "/stock-movement", label: "Stock History" },
-              ],
+              children: [{ key: "/stock-movement", label: "Stock History" }],
             },
             {
               key: "accounts",
               icon: <BankOutlined />,
               label: "Accounts",
               children: [
-                { key: "/payments", label: "Payments" },
+                { key: "/payments", label: "Customer Ledger" },
                 { key: "/transactions", label: "Transactions" },
                 { key: "/vendor-ledger", label: "Vendor Ledger" },
               ],
@@ -175,13 +173,15 @@ const App = () => {
       </Sider>
 
       <Layout>
-        <Header style={{
-          padding: '0 24px 0 0',
-          background: colorBgContainer,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+        <Header
+          style={{
+            padding: "0 24px 0 0",
+            background: colorBgContainer,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -189,11 +189,14 @@ const App = () => {
             style={{ fontSize: 16, width: 64, height: 64 }}
           />
 
-
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-            <Space style={{ cursor: 'pointer', padding: '0 8px' }}>
+          <Dropdown
+            menu={{ items: userMenuItems }}
+            placement="bottomRight"
+            arrow
+          >
+            <Space style={{ cursor: "pointer", padding: "0 8px" }}>
               <Avatar icon={<UserOutlined />} />
-              <span style={{ fontWeight: 500 }}>{user?.name || 'Admin'}</span>
+              <span style={{ fontWeight: 500 }}>{user?.name || "Admin"}</span>
             </Space>
           </Dropdown>
         </Header>
