@@ -1,203 +1,106 @@
 import { useState } from "react";
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  Select,
-  message,
-} from "antd";
-import moment from "moment";
-import type { Moment } from "moment";
-
+import { Table, Select, Spin, Alert } from "antd";
 import { useGetCustomers } from "../Utils/customerApi";
-import {
-  useCreateCustomerPayment,
-  useGetCustomerPayments,
-} from "../Utils/customerPaymentApi";
-import type {
-  CustomerPayment,
-  CustomerPaymentPayload,
-} from "../Utils/customerPaymentApi";
+import { useGetCustomerLedger } from "../Utils/CustomerLedgerApi";
 
 const { Option } = Select;
 
-const CustomerPayments = () => {
-  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form] = Form.useForm();
+const CustomerLedgerPage = () => {
+  const [selectedCustomer, setSelectedCustomer] = useState<string>("");
 
-  // Customers list
-  const { data: customers = [] } = useGetCustomers();
+  const { data: customers, isLoading: isCustomersLoading, error: customersError } = useGetCustomers();
+  const { data, isLoading: isLedgerLoading, error: ledgerError } = useGetCustomerLedger(selectedCustomer);
 
-  // Payments for selected customer
-  const { data: paymentsData = [], refetch } = useGetCustomerPayments(
-    selectedCustomer || "",
-  );
 
-  // Create payment
-  const { mutate: addPayment, isLoading } = useCreateCustomerPayment();
-
-  const openModal = (customerId: string) => {
-    setSelectedCustomer(customerId);
-    form.resetFields();
-    setIsModalOpen(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      if (!selectedCustomer) return;
-
-      const payload: CustomerPaymentPayload = {
-        customer: selectedCustomer,
-        amount: Number(values.amount),
-        paymentDate: (values.paymentDate as Moment).format("YYYY-MM-DD"),
-        paymentMode: values.paymentMode,
-        note: values.note || "",
-      };
-
-      addPayment(payload, {
-        onSuccess: () => {
-          message.success("Payment added successfully");
-          setIsModalOpen(false);
-          refetch();
-        },
-        onError: (err: any) => {
-          message.error(
-            err?.response?.data?.message || "Failed to add payment",
-          );
-        },
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  /* ================= TABLE COLUMNS ================= */
-
-  const customerColumns = [
-    { title: "Name", dataIndex: "name" },
-    { title: "Phone", dataIndex: "phone" },
-    { title: "Email", dataIndex: "email" },
-    {
-      title: "Paid Amount",
-      render: (_: any, record: any) => {
-        const totalPaid =
-          paymentsData
-            .filter((p: CustomerPayment) => p.customer === record._id)
-            .reduce((sum, p) => sum + p.amount, 0) || 0;
-
-        return `₹${totalPaid}`;
-      },
-    },
-    {
-      title: "Action",
-      render: (_: any, record: any) => (
-        <Button type="primary" onClick={() => openModal(record._id)}>
-          Add Payment
-        </Button>
-      ),
-    },
-  ];
-
-  const paymentColumns = [
+  const columns = [
     {
       title: "Date",
-      dataIndex: "paymentDate",
-      render: (date: string) => moment(date).format("DD-MM-YYYY"),
+      dataIndex: "date",
+      render: (v?: string) => (v ? new Date(v).toLocaleDateString() : "-"),
     },
     {
-      title: "Amount",
-      dataIndex: "amount",
-      render: (amt: number) => `₹${amt}`,
+      title: "Type",
+      dataIndex: "type",
     },
-    { title: "Mode", dataIndex: "paymentMode" },
-    { title: "Note", dataIndex: "note" },
+    {
+      title: "Debit (Sale)",
+      dataIndex: "debit",
+      render: (v: number) => `₹${v}`,
+    },
+    {
+      title: "Credit (Payment)",
+      dataIndex: "credit",
+      render: (v: number) => `₹${v}`,
+    },
+    {
+      title: "Balance",
+      dataIndex: "balance",
+      render: (v: number) => `₹${v}`,
+    },
   ];
 
   return (
     <div>
-      <h2 className="text-xl font-semibold">Customer Payments</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Customer Ledger</h2>
 
-      {/* Customers table */}
-      <Table
-        rowKey="_id"
-        dataSource={customers}
-        columns={customerColumns}
-        bordered
-        pagination={false}
-        style={{ marginBottom: 20 }}
-      />
+        {isCustomersLoading ? (
+          <Spin />
+        ) : customersError ? (
+          <Alert type="error" message="Failed to load customers" />
+        ) : (
+          <Select
+            style={{ width: 260 }}
+            placeholder="Select Customer"
+            onChange={(val) => setSelectedCustomer(val)}
+            value={selectedCustomer || undefined}
+          >
+            {customers?.map((c: any) => (
+              <Option key={c._id} value={c._id}>
+                {c.name}
+              </Option>
+            ))}
+          </Select>
+        )}
+      </div>
 
-      {/* Payments table */}
-      {selectedCustomer && (
-        <>
-          <h3 className="text-xl font-semibold" style={{ marginTop: 20 }}>
-            Payments for{" "}
-            {customers.find((c: any) => c._id === selectedCustomer)?.name}
-          </h3>
+      {data && (
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="p-3 border rounded bg-white">
+            <p className="text-sm text-gray-500">Total Sales</p>
+            <p className="text-lg font-semibold">₹{data.totalSalesAmount}</p>
+          </div>
 
-          <Table
-            rowKey="_id"
-            dataSource={paymentsData}
-            columns={paymentColumns}
-            bordered
-            pagination={false}
-          />
-        </>
+          <div className="p-3 border rounded bg-white">
+            <p className="text-sm text-gray-500">Total Received</p>
+            <p className="text-lg font-semibold">₹{data.totalReceivedAmount}</p>
+          </div>
+
+          <div className="p-3 border rounded bg-white">
+            <p className="text-sm text-gray-500">Balance</p>
+            <p className="text-lg font-semibold">₹{data.balance}</p>
+          </div>
+        </div>
       )}
 
-      {/* Add Payment Modal */}
-      <Modal
-        title="Add Customer Payment"
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onOk={handleSave}
-        confirmLoading={isLoading}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{ paymentDate: moment() }}
-        >
-          <Form.Item
-            label="Amount"
-            name="amount"
-            rules={[{ required: true, message: "Enter amount" }]}
-          >
-            <Input type="number" min={1} />
-          </Form.Item>
+      {ledgerError && <Alert message="Failed to load ledger" type="error" className="mb-4" />}
 
-          <Form.Item
-            label="Payment Date"
-            name="paymentDate"
-            rules={[{ required: true }]}
-          >
-            <DatePicker style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item
-            label="Payment Mode"
-            name="paymentMode"
-            rules={[{ required: true }]}
-          >
-            <Select>
-              <Option value="Cash">Cash</Option>
-              <Option value="Bank">Bank</Option>
-              <Option value="UPI">UPI</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Note" name="note">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <Table
+        rowKey={(record, i) => (record.date || "") + record.type + record.debit + i}
+        columns={columns}
+        dataSource={data?.ledger || []}
+        loading={isLedgerLoading}
+        bordered
+        className="erp-table"
+        pagination={false}
+        locale={{
+          emptyText: selectedCustomer
+            ? "No ledger data for this customer"
+            : "Select a customer to view ledger",
+        }}
+      />
     </div>
   );
 };
 
-export default CustomerPayments;
+export default CustomerLedgerPage;
