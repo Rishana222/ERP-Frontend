@@ -1,8 +1,6 @@
-// Utils/customerPaymentApi.ts
 import { axiosInstance } from "../Utils/Axios";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-/* ================= TYPES ================= */
 
 export interface CustomerPayment {
   _id: string;
@@ -15,29 +13,27 @@ export interface CustomerPayment {
 
 export interface CustomerPaymentPayload {
   customer: string;
+  sale: string; 
   amount: number;
-  paymentDate?: string;
+  paymentDate: string;
   paymentMode: string;
   note?: string;
 }
 
-/* ================= API CALLS ================= */
 
-// POST
 export const createCustomerPayment = (data: CustomerPaymentPayload) =>
   axiosInstance.post("/api/customer-payment/create", data);
 
-// GET (customer-wise)
+
 export const getCustomerPayments = async (
   customerId: string,
 ): Promise<CustomerPayment[]> => {
   const res = await axiosInstance.get(
-    `/customer-payment/list?customer=${customerId}`,
+    `/api/customer-payment/${customerId}`, 
   );
-  return res.data.data; // ✅ always return array
+  return res.data.data;
 };
 
-/* ================= HOOKS ================= */
 
 export const useCreateCustomerPayment = () =>
   useMutation<CustomerPayment, Error, CustomerPaymentPayload>({

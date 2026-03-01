@@ -8,16 +8,20 @@ import {
   DatePicker,
   Select,
   message,
-  Spin,
 } from "antd";
-import moment, { Moment } from "moment";
+import moment from "moment";
+import type { Moment } from "moment";
 
 import { useGetCustomers } from "../Utils/customerApi";
 import {
   useCreateCustomerPayment,
   useGetCustomerPayments,
 } from "../Utils/customerPaymentApi";
-import { useGetCustomerAccount } from "../Utils/customerAccountApi";
+import type {
+  CustomerPayment,
+  CustomerPaymentPayload,
+} from "../Utils/customerPaymentApi";
+import { useGetSales } from "../Utils/salesAPI";
 
 const { Option } = Select;
 
@@ -26,31 +30,44 @@ const CustomerPayments = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  /* ================= APIs ================= */
-  const { data: customers = [], isLoading: loadingCustomers } =
-    useGetCustomers();
-  const { data: paymentsData = [], refetch: refetchPayments } =
-    useGetCustomerPayments(selectedCustomer || "");
-  const { data: account, isLoading: loadingAccount } = useGetCustomerAccount(
-    selectedCustomer || "",
-  );
-  const { mutate: addPayment, isLoading: savingPayment } =
-    useCreateCustomerPayment();
 
-  /* ================= MODAL HANDLERS ================= */
+  const { data: customers = [] } = useGetCustomers();
+
+  const { data: paymentsData = [], refetch } =
+    useGetCustomerPayments(selectedCustomer || "");
+
+  const { data: sales = [] } = useGetSales(selectedCustomer || "");
+
+  const { mutate: addPayment, isLoading } = useCreateCustomerPayment();
+
+
   const openModal = (customerId: string) => {
     setSelectedCustomer(customerId);
     form.resetFields();
+    form.setFieldsValue({ paymentDate: moment() });
     setIsModalOpen(true);
+  };
+
+  const handleSaleChange = (saleId: string) => {
+    const sale = sales.find((s: any) => s._id === saleId);
+    if (!sale) return;
+
+    const due = sale.grandTotal - (sale.paidAmount || 0);
+    form.setFieldsValue({ amount: due });
   };
 
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      if (!selectedCustomer) return;
 
-      const payload = {
+      if (!selectedCustomer || !values.sale) {
+        message.error("Invoice is required");
+        return;
+      }
+
+      const payload: CustomerPaymentPayload = {
         customer: selectedCustomer,
+        sale: values.sale, 
         amount: Number(values.amount),
         paymentDate: (values.paymentDate as Moment).format("YYYY-MM-DD"),
         paymentMode: values.paymentMode,
@@ -58,29 +75,37 @@ const CustomerPayments = () => {
       };
 
       addPayment(payload, {
-        onSuccess: (res) => {
-          message.success(res.message || "Payment added successfully");
+        onSuccess: () => {
+          message.success("Payment added successfully");
           setIsModalOpen(false);
-          refetchPayments();
+          refetch();
         },
         onError: (err: any) => {
-          message.error(err?.response?.data?.message || "Payment failed");
+          message.error(
+            err?.response?.data?.message || "Failed to add payment"
+          );
         },
       });
     } catch (err) {
-      console.error(err);
+      console.log(err);
     }
   };
 
-  /* ================= TABLE COLUMNS ================= */
+  
+
   const customerColumns = [
     { title: "Name", dataIndex: "name" },
     { title: "Phone", dataIndex: "phone" },
-    { title: "Email", dataIndex: "email" },
     {
-      title: "Due Amount",
-      render: (_: any, record: any) =>
-        record._id === selectedCustomer ? `₹${account?.balance || 0}` : "-",
+      title: "Total Paid",
+      render: (_: any, record: any) => {
+        const totalPaid =
+          paymentsData
+            .filter((p: CustomerPayment) => p.customer === record._id)
+            .reduce((sum, p) => sum + p.amount, 0) || 0;
+
+        return `₹${totalPaid}`;
+      },
     },
     {
       title: "Action",
@@ -107,71 +132,77 @@ const CustomerPayments = () => {
     { title: "Note", dataIndex: "note" },
   ];
 
-  /* ================= UI ================= */
-  if (loadingCustomers) return <Spin tip="Loading customers..." />;
 
   return (
     <div>
-      <h2 className="text-xl font-semibold">Customer Payments</h2>
+      <h2 className="text-xl font-semibold mb-4">Customer Payments</h2>
 
-      {/* CUSTOMER TABLE */}
       <Table
         rowKey="_id"
         dataSource={customers}
         columns={customerColumns}
         bordered
+        className="erp-table"
         pagination={false}
         style={{ marginBottom: 20 }}
       />
 
-      {/* PAYMENT HISTORY */}
       {selectedCustomer && (
         <>
-          <h3 style={{ marginTop: 20 }} className="text-xl font-semibold">
+          <h3 className="text-lg font-semibold mb-2">
             Payments for{" "}
-            {customers.find((c) => c._id === selectedCustomer)?.name}
+            {customers.find((c: any) => c._id === selectedCustomer)?.name}
           </h3>
 
-          {loadingAccount ? (
-            <Spin tip="Loading account..." />
-          ) : (
-            <Table
-              rowKey="_id"
-              dataSource={paymentsData}
-              columns={paymentColumns}
-              bordered
-              pagination={false}
-            />
-          )}
+          <Table
+            rowKey="_id"
+            dataSource={paymentsData}
+            columns={paymentColumns}
+            bordered
+            className="erp-table"
+            pagination={false}
+          />
         </>
       )}
 
-      {/* ADD PAYMENT MODAL */}
       <Modal
         title="Add Customer Payment"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={handleSave}
-        confirmLoading={savingPayment}
+        confirmLoading={isLoading}
+        destroyOnClose
       >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            paymentDate: moment(),
-            paymentMode: "Cash",
-          }}
-        >
-          <Form.Item label="Due Amount">
-            <Input value={`₹${account?.balance || 0}`} disabled />
+        <Form form={form} layout="vertical">
+          <Form.Item
+            label="Invoice"
+            name="sale"
+            rules={[{ required: true, message: "Invoice is required" }]}
+          >
+            <Select
+              placeholder="Select invoice"
+              onChange={handleSaleChange}
+            >
+              {sales
+                .filter((s: any) => s.paymentStatus !== "PAID")
+                .map((s: any) => {
+                  const due = s.grandTotal - (s.paidAmount || 0);
+                  return (
+                    <Option key={s._id} value={s._id}>
+                      {s.invoiceNumber} — Due ₹{due}
+                    </Option>
+                  );
+                })}
+            </Select>
           </Form.Item>
 
           <Form.Item
             label="Amount"
             name="amount"
-            rules={[{ required: true, message: "Enter amount" }]}
+            rules={[{ required: true }]}
           >
-            <Input type="number" min={1} />
+            
+            <Input type="number" />
           </Form.Item>
 
           <Form.Item
@@ -187,7 +218,7 @@ const CustomerPayments = () => {
             name="paymentMode"
             rules={[{ required: true }]}
           >
-            <Select>
+            <Select placeholder="Select mode">
               <Option value="Cash">Cash</Option>
               <Option value="Bank">Bank</Option>
               <Option value="UPI">UPI</Option>
