@@ -23,7 +23,6 @@ import Variant from "./Pages/Variant";
 import Sales from "./Pages/Sales";
 import Invoices from "./Pages/Invoices";
 import SalesReturn from "./Pages/SalesReturn";
-import Receipts from "./Pages/Receipts";
 import Purchase from "./Pages/Purchase";
 import PurchaseReturn from "./Pages/PurchaseReturn";
 import VendorPayment from "./Pages/VendorPayment";
@@ -37,7 +36,7 @@ import ExpenseCategories from "./Pages/ExpenseCategories";
 import User from "./Pages/User";
 import Roles from "./Pages/Roles";
 import Permissions from "./Pages/Permissions";
-
+import Accounts from "./Pages/Accounts";
 
 // Auth Guards
 import { PrivateRoute, LoginProtect } from "./Components/PrivateRoute";
@@ -74,7 +73,6 @@ const router = createBrowserRouter([
       { path: "sales", element: <Sales /> },
       { path: "invoices", element: <Invoices /> },
       { path: "sales-return", element: <SalesReturn /> },
-      { path: "receipts", element: <Receipts /> },
       { path: "purchase", element: <Purchase /> },
       { path: "purchase-return", element: <PurchaseReturn /> },
       { path: "vendor-payments", element: <VendorPayment /> },
@@ -88,7 +86,8 @@ const router = createBrowserRouter([
       { path: "user", element: <User /> },
       { path: "roles", element: <Roles /> },
       { path: "permissions", element: <Permissions /> },
-      {path: "customer-payment", element:<CustomerPayment/>}
+      { path: "customer-payment", element: <CustomerPayment /> },
+      { path: "accounts", element:<Accounts /> },
     ],
   },
 ]);
@@ -96,18 +95,14 @@ const router = createBrowserRouter([
 const queryClient = new QueryClient();
 const theme = {
   token: {
-
     colorPrimary: "#00264d",
-
 
     colorBgLayout: "#F0F2F5",
     colorBgContainer: " #e6e6e6",
 
-
     colorText: "#1F2937",
     colorTextSecondary: "#4B5563",
     colorTextHeading: "#111827",
-
 
     colorBorder: "#D1D5DB",
     colorBorderSecondary: "#E5E7EB",
@@ -126,7 +121,6 @@ const theme = {
       hoverBorderColor: "#9CA3AF",
     },
 
-
     Select: {
       colorBgContainer: "#FFFFFF",
       colorText: "#1F2937",
@@ -134,13 +128,11 @@ const theme = {
       optionActiveBg: "#F3F4F6",
     },
 
-
     Form: {
       labelColor: "#374151",
       labelFontSize: 14,
       verticalLabelPadding: "0 0 6px",
     },
-
 
     Table: {
       headerBg: "#00264d",
@@ -154,13 +146,11 @@ const theme = {
       colorTextDescription: "#6B7280",
     },
 
-
     Modal: {
       contentBg: "#FFFFFF",
       headerBg: "#FFFFFF",
       titleColor: "#111827",
     },
-
 
     Button: {
       fontWeight: 500,
@@ -168,7 +158,6 @@ const theme = {
     },
   },
 };
-
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

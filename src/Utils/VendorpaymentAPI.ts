@@ -17,17 +17,18 @@ export interface VendorPaymentPayload {
   paymentDate: string;
   paymentMode: string;
   note?: string;
+  account: string; 
 }
 
 // POST
 export const createVendorPayment = (data: VendorPaymentPayload) =>
-  axiosInstance.post("/vendor-payment", data);
+  axiosInstance.post("/api/vendor-payment", data);
 
 // GET
 export const getVendorPayments = async (
   vendorId: string,
 ): Promise<VendorPayment[]> => {
-  const res = await axiosInstance.get(`/vendor-payment/${vendorId}`);
+  const res = await axiosInstance.get(`/api/vendor-payment/${vendorId}`);
   return res.data.data; // ✅ array return
 };
 

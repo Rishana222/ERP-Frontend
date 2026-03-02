@@ -17,10 +17,7 @@ import {
   useCreateVendorPayment,
   useGetVendorPayments,
 } from "../Utils/VendorpaymentAPI";
-import type {
-  VendorPaymentPayload,
-  VendorPayment,
-} from "../Utils/VendorpaymentAPI";
+import type { VendorPaymentPayload, VendorPayment } from "../Utils/VendorpaymentAPI";
 
 const { Option } = Select;
 
@@ -29,15 +26,15 @@ const VendorPayments = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  
+  // Get vendors
   const { data: vendors = [] } = useGetVendors();
 
-
+  // Get payments for selected vendor
   const { data: paymentsData = [], refetch } = useGetVendorPayments(
-    selectedVendor || "",
+    selectedVendor || ""
   );
 
-
+  // Create payment mutation
   const { mutate: addPayment, isLoading } = useCreateVendorPayment();
 
   const openModal = (vendorId: string) => {
@@ -55,8 +52,8 @@ const VendorPayments = () => {
         vendor: selectedVendor,
         amount: Number(values.amount),
         paymentDate: (values.paymentDate as Moment).format("YYYY-MM-DD"),
-        paymentMode: values.paymentMode,
         note: values.note || "",
+        account: values.account,
       };
 
       addPayment(payload, {
@@ -65,8 +62,8 @@ const VendorPayments = () => {
           setIsModalOpen(false);
           refetch();
         },
-        onError: () => {
-          message.error("Failed to add payment");
+        onError: (err: any) => {
+          message.error(err.response?.data?.message || "Failed to add payment");
         },
       });
     } catch (err) {
@@ -74,7 +71,7 @@ const VendorPayments = () => {
     }
   };
 
-
+  // Vendor table columns
   const vendorColumns = [
     { title: "Name", dataIndex: "name" },
     { title: "Phone", dataIndex: "phone" },
@@ -87,7 +84,6 @@ const VendorPayments = () => {
           paymentsData
             .filter((p: VendorPayment) => p.vendor === record._id)
             .reduce((sum, p) => sum + p.amount, 0) || 0;
-
         return `₹${totalPaid}`;
       },
     },
@@ -101,7 +97,7 @@ const VendorPayments = () => {
     },
   ];
 
- 
+  // Payment table columns
   const paymentColumns = [
     {
       title: "Date",
@@ -117,8 +113,20 @@ const VendorPayments = () => {
     { title: "Note", dataIndex: "note" },
   ];
 
+  // Get remaining vendor balance
+  const getRemainingBalance = () => {
+    if (!selectedVendor) return 0;
+    const vendor = vendors.find((v) => v._id === selectedVendor);
+    if (!vendor) return 0;
+    const totalPaid =
+      paymentsData
+        .filter((p) => p.vendor === selectedVendor)
+        .reduce((sum, p) => sum + p.amount, 0) || 0;
+    return vendor.balance - totalPaid;
+  };
+
   return (
-    <div >
+    <div>
       <h2 className="text-xl font-semibold">Vendor Payments</h2>
 
       <Table
@@ -159,7 +167,20 @@ const VendorPayments = () => {
           <Form.Item
             label="Amount"
             name="amount"
-            rules={[{ required: true, message: "Enter amount" }]}
+            rules={[
+              { required: true, message: "Enter amount" },
+              {
+                validator: (_, value) => {
+                  const remaining = getRemainingBalance();
+                  if (value > remaining) {
+                    return Promise.reject(
+                      `Cannot pay more than vendor balance ₹${remaining}`
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
           >
             <Input type="number" />
           </Form.Item>
@@ -174,14 +195,13 @@ const VendorPayments = () => {
           </Form.Item>
 
           <Form.Item
-            label="Payment Mode"
-            name="paymentMode"
-            rules={[{ required: true }]}
+            label="Account"
+            name="account"
+            rules={[{ required: true, message: "Account is required" }]}
           >
-            <Select>
-              <Option value="Cash">Cash</Option>
-              <Option value="Bank">Bank</Option>
-              <Option value="UPI">UPI</Option>
+            <Select placeholder="Select account">
+              <Option value="69a3fd27889e8eb025fe3752">Cash Account</Option>
+              <Option value="69a3fd2e889e8eb025fe3755">Bank Account</Option>
             </Select>
           </Form.Item>
 

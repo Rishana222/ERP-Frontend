@@ -119,7 +119,7 @@ const App = () => {
                 { key: "/sales", label: "New Sale" },
                 { key: "/invoices", label: "Invoices" },
                 { key: "/sales-return", label: "Sales Return" },
-                { key: "/receipts", label: "Receipts" },
+
                 { key: "/customer-payment", label: "Customer Payments" },
               ],
             },
@@ -147,6 +147,7 @@ const App = () => {
                 { key: "/payments", label: "Customer Ledger" },
                 { key: "/transactions", label: "Transactions" },
                 { key: "/vendor-ledger", label: "Vendor Ledger" },
+                { key: "/Accounts", label: "Accounts" },
               ],
             },
             {
