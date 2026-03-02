@@ -1,9 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { axiosInstance } from "../Utils/Axios";
 
-/* ================================
-   Interfaces
-================================ */
+
 
 export interface Customer {
   _id: string;

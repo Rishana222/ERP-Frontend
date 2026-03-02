@@ -16,7 +16,7 @@ export interface VendorLedgerResponse {
   ledger: LedgerRow[];
 }
 
-// GET Vendor Ledger
+
 const getVendorLedger = async (
   vendorId: string,
 ): Promise<VendorLedgerResponse> => {

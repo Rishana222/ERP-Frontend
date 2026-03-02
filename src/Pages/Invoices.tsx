@@ -2,7 +2,7 @@ import React from "react";
 import { Table, Button, Popconfirm, message, Tag } from "antd";
 import { useGetSales, useDeleteSale } from "../Utils/salesAPI";
 
-// Types
+
 interface Customer {
   _id: string;
   name: string;

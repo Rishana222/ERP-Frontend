@@ -20,19 +20,19 @@ export interface VendorPaymentPayload {
   account: string; 
 }
 
-// POST
+
 export const createVendorPayment = (data: VendorPaymentPayload) =>
   axiosInstance.post("/api/vendor-payment", data);
 
-// GET
+
 export const getVendorPayments = async (
   vendorId: string,
 ): Promise<VendorPayment[]> => {
   const res = await axiosInstance.get(`/api/vendor-payment/${vendorId}`);
-  return res.data.data; // ✅ array return
+  return res.data.data; 
 };
 
-// Hooks
+
 export const useCreateVendorPayment = () =>
   useMutation<VendorPayment, Error, VendorPaymentPayload>({
     mutationFn: (data) =>

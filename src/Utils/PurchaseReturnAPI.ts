@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "../Utils/Axios";
 
-/* ================= TYPES ================= */
+
 
 export interface PurchaseReturnItem {
   product: {
@@ -39,41 +39,37 @@ export interface PurchaseReturnPayload {
   note?: string;
 }
 
-/* ================= API FUNCTIONS ================= */
 
-// Get All Purchase Returns
+
+
 const getPurchaseReturns = async (): Promise<PurchaseReturn[]> => {
   const res = await axiosInstance.get("/api/purchase-return/get");
 
-  // 🔥 IMPORTANT FIX
-  // If backend returns { success: true, data: [...] }
+ 
   return res.data.data || [];
 };
 
-// Get Single Purchase Return
 const getPurchaseReturnById = async (id: string): Promise<PurchaseReturn> => {
   const res = await axiosInstance.get(`/api/purchase-return/get/${id}`);
 
   return res.data.data;
 };
 
-// Create Purchase Return
+
 const createPurchaseReturn = async (data: PurchaseReturnPayload) => {
   const res = await axiosInstance.post("/api/purchase-return/create", data);
 
   return res.data;
 };
 
-/* ================= REACT QUERY HOOKS ================= */
 
-// Get All
 export const useGetPurchaseReturns = () =>
   useQuery({
     queryKey: ["purchase-returns"],
     queryFn: getPurchaseReturns,
   });
 
-// Get Single
+
 export const useGetPurchaseReturnById = (id: string) =>
   useQuery({
     queryKey: ["purchase-return", id],
@@ -81,7 +77,7 @@ export const useGetPurchaseReturnById = (id: string) =>
     enabled: !!id,
   });
 
-// Create
+
 export const useCreatePurchaseReturn = () => {
   const queryClient = useQueryClient();
 

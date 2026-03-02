@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { axiosInstance } from "../Utils/Axios";
 
-/* ================================
-   Interfaces
-================================ */
+
 
 export type StockHistoryType =
   | "PURCHASE"
@@ -26,30 +24,25 @@ export interface StockHistory {
   createdAt?: string;
 }
 
-/* ================================
-   API Functions
-================================ */
 
-// 🔹 Get All
+
+
 const getAllStockHistory = async (): Promise<StockHistory[]> => {
   const res = await axiosInstance.get("/api/stock-history/get");
-  return res.data.data;   // ✅ important fix
+  return res.data.data;   
 };
 
-// 🔹 Get By Product
+
 const getStockHistoryByProduct = async (
   productId: string,
 ): Promise<StockHistory[]> => {
   const res = await axiosInstance.get(
     `/api/stock-history/product/${productId}`,
   );
-  return res.data.data;   // ✅ important fix
+  return res.data.data;   
 };
 
 
-/* ================================
-   React Query Hooks
-================================ */
 
 export const useGetAllStockHistory = () =>
   useQuery({

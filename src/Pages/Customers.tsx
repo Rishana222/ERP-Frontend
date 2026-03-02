@@ -19,9 +19,7 @@ function Customers() {
   const updateMutation = useUpdateCustomer();
   const deleteMutation = useDeleteCustomer();
 
-  /* ================================
-     Save (Create / Update)
-  ================================= */
+
 
   const handleSave = (values: any) => {
     if (editingCustomer) {
@@ -50,9 +48,6 @@ function Customers() {
     }
   };
 
-  /* ================================
-     Delete
-  ================================= */
 
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id, {
@@ -64,9 +59,7 @@ function Customers() {
     });
   };
 
-  /* ================================
-     Close Modal
-  ================================= */
+  
 
   const closeModal = () => {
     setOpenModal(false);
@@ -74,9 +67,6 @@ function Customers() {
     form.resetFields();
   };
 
-  /* ================================
-     Table Columns
-  ================================= */
 
   const columns = [
     {
@@ -132,9 +122,7 @@ function Customers() {
     },
   ];
 
-  /* ================================
-     JSX
-  ================================= */
+
 
   return (
     <>

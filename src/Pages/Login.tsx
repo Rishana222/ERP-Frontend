@@ -23,7 +23,7 @@ const Login: React.FC = () => {
       const response = await loginService({ email, password });
       const { user, token } = response.data;
 
-      // ടോക്കണും യൂസർ വിവരങ്ങളും ഒരൊറ്റ കീയിൽ സേവ് ചെയ്യുന്നു
+  
       localStorage.setItem("userInfo", JSON.stringify({ user, token })); 
 
       dispatch(setCredentials({ user, token }));

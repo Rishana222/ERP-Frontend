@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "./Axios";
 
-/* ================= TYPES ================= */
+
 
 export interface Variant {
   _id: string;
   name: string;
-  product: { _id: string; name: string }; // populated product
+  product: { _id: string; name: string }; 
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -14,10 +14,10 @@ export interface Variant {
 
 export interface VariantPayload {
   name: string;
-  product: string; // Product ID
+  product: string; 
 }
 
-/* ================= GET ================= */
+
 
 const getVariants = async (): Promise<Variant[]> => {
   const res = await axiosInstance.get("/api/variant/get");
@@ -30,7 +30,7 @@ export const useGetVariants = () =>
     queryFn: getVariants,
   });
 
-/* ================= GET BY ID ================= */
+
 
 const getVariantById = async (id: string): Promise<Variant> => {
   const res = await axiosInstance.get(`/api/variant/get/${id}`);
@@ -44,7 +44,7 @@ export const useGetVariantById = (id: string) =>
     enabled: !!id,
   });
 
-/* ================= CREATE ================= */
+
 
 const createVariant = (data: VariantPayload) =>
   axiosInstance.post("/api/variant/create", data);
@@ -59,7 +59,7 @@ export const useCreateVariant = () => {
   });
 };
 
-/* ================= UPDATE ================= */
+
 
 const updateVariant = ({ id, data }: { id: string; data: VariantPayload }) =>
   axiosInstance.put(`/api/variant/update/${id}`, data);
@@ -74,7 +74,6 @@ export const useUpdateVariant = () => {
   });
 };
 
-/* ================= DELETE ================= */
 
 const deleteVariant = (id: string) =>
   axiosInstance.delete(`/api/variant/delete/${id}`);

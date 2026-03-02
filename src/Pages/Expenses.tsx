@@ -1,164 +1,145 @@
 import React, { useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, InputNumber } from "antd";
-import type { TableColumnsType } from "antd";
-import { createStyles } from "antd-style";
+import { Table, Modal, Form, Input, message, Select, DatePicker } from "antd";
+import moment from "moment";
+import { useGetExpenses, useCreateExpense } from "../Utils/ExpenseAPI";
+import { useGetCategories } from "../Utils/ExpenseCategoryAPI";
+import { useGetAccounts } from "../Utils/AccountsAPI";
+import { useGetVendors } from "../Utils/vendorApi";
 
-const { Option } = Select;
+const ExpensePage: React.FC = () => {
+  const { data: expenses = [], isLoading } = useGetExpenses();
+  const { data: categories = [] } = useGetCategories();
+  const { data: accounts = [] } = useGetAccounts();
+  const { data: vendors = [] } = useGetVendors();
+  const createMutation = useCreateExpense();
 
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
-    }
-  `,
-}));
-
-interface ExpenseData {
-  key: React.Key;
-  expenseNo: string;
-  expenseDate: string;
-  vendor: string;
-  category: string;
-  paymentMode: string;
-  amount: number;
-  status: string;
-}
-
-const columns: TableColumnsType<ExpenseData> = [
-  { title: "Expense No", dataIndex: "expenseNo", width: 120 },
-  { title: "Date", dataIndex: "expenseDate", width: 120 },
-  { title: "Vendor", dataIndex: "vendor", width: 150 },
-  { title: "Category", dataIndex: "category", width: 150 },
-  { title: "Payment Mode", dataIndex: "paymentMode", width: 120 },
-  { title: "Amount", dataIndex: "amount", width: 100 },
-  { title: "Status", dataIndex: "status", width: 100 },
-  {
-    title: "Action",
-    fixed: "end",
-    width: 120,
-    render: () => (
-      <div className="flex gap-2">
-        <a>Edit</a>
-        <a style={{ color: "red" }}>Delete</a>
-      </div>
-    ),
-  },
-];
-
-const Expenses: React.FC = () => {
-  const { styles } = useStyle();
-
-  const [openModal, setOpenModal] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // Empty table for now
-  const dataSource: ExpenseData[] = [];
-
-  const handleAddExpense = (values: any) => {
-    console.log("New Expense:", values);
-    setOpenModal(false);
+  const openModal = () => {
     form.resetFields();
+    setModalVisible(true);
   };
 
+  const handleSave = async (values: any) => {
+    try {
+      await createMutation.mutateAsync({
+        category: values.category,
+        account: values.account,
+        vendor: values.vendor,
+        amount: Number(values.amount),
+        paymentMethod: values.paymentMethod,
+     
+        date: values.date ? values.date.toISOString() : undefined,
+      });
+      message.success("Expense created successfully");
+      form.resetFields();
+      setModalVisible(false);
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || err.message);
+    }
+  };
+
+  const columns = [
+    { title: "Category", dataIndex: ["category", "name"], key: "category" },
+    { title: "Account", dataIndex: ["account", "name"], key: "account" },
+    {
+      title: "Vendor",
+      dataIndex: ["vendor", "name"],
+      key: "vendor",
+      render: (v: string) => v || "-",
+    },
+    { title: "Amount", dataIndex: "amount", key: "amount" },
+    {
+      title: "Payment Method",
+      dataIndex: "paymentMethod",
+      key: "paymentMethod",
+    },
+    {
+      title: "Date",
+      dataIndex: "date",
+      key: "date",
+      render: (d: string) => moment(d).format("YYYY-MM-DD"),
+    },
+  ];
+
   return (
-    <div>
-      {/* Header + Add Button */}
-      <div className="flex justify-between items-center">
+    <>
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Expenses</h2>
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" onClick={() => setOpenModal(true)}>
-            Add Expense
-          </Button>
-        </div>
+        <button
+          className="px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
+          onClick={openModal}
+        >
+          Add Expense
+        </button>
       </div>
 
-      <Table<ExpenseData>
-        bordered
-        className={styles.customTable}
+      <Table
+        dataSource={expenses}
         columns={columns}
-        dataSource={dataSource}
-        scroll={{ x: "max-content" }}
-        pagination={false}
-        rowKey="key"
+        rowKey="_id"
+        loading={isLoading}
+        bordered
+        className="erp-table"
       />
 
       <Modal
         title="Add Expense"
-        open={openModal}
-        onCancel={() => setOpenModal(false)}
-        footer={null}
-        destroyOnClose
+        open={modalVisible}
+        onCancel={() => {
+          setModalVisible(false);
+          form.resetFields();
+        }}
+        onOk={() => form.submit()}
       >
-        <Form layout="vertical" form={form} onFinish={handleAddExpense}>
-          <Form.Item label="Expense No" name="expenseNo" rules={[{ required: true }]}>
-            <Input placeholder="EXP001" />
+        <Form form={form} layout="vertical" onFinish={handleSave}>
+          <Form.Item
+            label="Category"
+            name="category"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={categories.map((c) => ({ value: c._id, label: c.name }))}
+            />
           </Form.Item>
-
-          <Form.Item label="Expense Date" name="expenseDate" rules={[{ required: true }]}>
+          <Form.Item
+            label="Account"
+            name="account"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={accounts.map((a) => ({ value: a._id, label: a.name }))}
+            />
+          </Form.Item>
+          <Form.Item label="Vendor" name="vendor">
+            <Select
+              options={vendors.map((v) => ({ value: v._id, label: v.name }))}
+            />
+          </Form.Item>
+          <Form.Item label="Amount" name="amount" rules={[{ required: true }]}>
+            <Input type="number" />
+          </Form.Item>
+          <Form.Item
+            label="Payment Method"
+            name="paymentMethod"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={["Cash", "Bank", "UPI"].map((pm) => ({
+                value: pm,
+                label: pm,
+              }))}
+            />
+          </Form.Item>
+          
+          <Form.Item label="Date" name="date">
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
-
-          <Form.Item label="Vendor" name="vendor" rules={[{ required: true }]}>
-            <Select placeholder="Select Vendor">
-              <Option value="vendor1">Vendor 1</Option>
-              <Option value="vendor2">Vendor 2</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Category" name="category" rules={[{ required: true }]}>
-            <Select placeholder="Select Category">
-              <Option value="cat1">Category 1</Option>
-              <Option value="cat2">Category 2</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Payment Mode" name="paymentMode" rules={[{ required: true }]}>
-            <Select placeholder="Select Payment Mode">
-              <Option value="cash">Cash</Option>
-              <Option value="credit_card">Credit Card</Option>
-              <Option value="bank_transfer">Bank Transfer</Option>
-              <Option value="mobile_payment">Mobile Payment</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Amount" name="amount" rules={[{ required: true }]}>
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item label="Description" name="description">
-            <Input.TextArea placeholder="Optional" />
-          </Form.Item>
-
-          <Form.Item label="Reference" name="reference">
-            <Input placeholder="Optional Reference" />
-          </Form.Item>
-
-          <Form.Item label="Account" name="account" rules={[{ required: true }]}>
-            <Select placeholder="Select Account">
-              <Option value="acc1">Account 1</Option>
-              <Option value="acc2">Account 2</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Status" name="status" initialValue="pending">
-            <Select>
-              <Option value="pending">Pending</Option>
-              <Option value="paid">Paid</Option>
-              <Option value="cancelled">Cancelled</Option>
-            </Select>
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="w-full">
-            Add Expense
-          </Button>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 
-export default Expenses;
+export default ExpensePage;

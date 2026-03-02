@@ -1,4 +1,4 @@
-// Utils/customerPaymentApi.ts
+
 import { axiosInstance } from "./Axios";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
