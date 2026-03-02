@@ -25,7 +25,7 @@ export const createCustomerPayment = (data: CustomerPaymentPayload) =>
 
 export const getCustomerPayments = async (customerId: string) => {
   const res = await axiosInstance.get(
-    `/customer-payment/list?customer=${customerId}`
+    `/api/customer-payment/${customerId}`
   );
   return res.data.data;
 };

@@ -67,11 +67,12 @@ const CustomerPayments = () => {
 
       const payload: CustomerPaymentPayload = {
         customer: selectedCustomer,
-        sale: values.sale, 
+        sale: values.sale,
         amount: Number(values.amount),
         paymentDate: (values.paymentDate as Moment).format("YYYY-MM-DD"),
         paymentMode: values.paymentMode,
         note: values.note || "",
+        account: values.account, 
       };
 
       addPayment(payload, {
@@ -91,7 +92,7 @@ const CustomerPayments = () => {
     }
   };
 
-  
+
 
   const customerColumns = [
     { title: "Name", dataIndex: "name" },
@@ -201,7 +202,7 @@ const CustomerPayments = () => {
             name="amount"
             rules={[{ required: true }]}
           >
-            
+
             <Input type="number" />
           </Form.Item>
 
@@ -214,14 +215,13 @@ const CustomerPayments = () => {
           </Form.Item>
 
           <Form.Item
-            label="Payment Mode"
-            name="paymentMode"
-            rules={[{ required: true }]}
+            label="Account"
+            name="account"
+            rules={[{ required: true, message: "Account is required" }]}
           >
-            <Select placeholder="Select mode">
-              <Option value="Cash">Cash</Option>
-              <Option value="Bank">Bank</Option>
-              <Option value="UPI">UPI</Option>
+            <Select placeholder="Select account">
+              <Option value="69a3fd27889e8eb025fe3752">Cash Account</Option>
+              <Option value="69a3fd2e889e8eb025fe3755">Bank Account</Option>
             </Select>
           </Form.Item>
 
