@@ -7,7 +7,6 @@ import {
   Select,
   message,
   Popconfirm,
-  Button,
 } from "antd";
 
 import {
@@ -62,7 +61,7 @@ const SalesPage: React.FC = () => {
     const items = form.getFieldValue("items") || [];
     const grandTotal = items.reduce(
       (sum: number, i: any) => sum + (i?.total || 0),
-      0,
+      0
     );
     form.setFieldsValue({ grandTotal });
   };
@@ -76,6 +75,27 @@ const SalesPage: React.FC = () => {
       form.setFieldsValue({ items });
       calculateTotals();
     }
+  };
+
+  // 🔥 AUTO UNIT SET FUNCTION
+  const handleProductChange = (productId: string, index: number) => {
+    const selectedProduct = products.find(
+      (p: any) => p._id === productId
+    );
+
+    if (!selectedProduct) return;
+
+    const items = form.getFieldValue("items") || [];
+
+    items[index] = {
+      ...items[index],
+      unit:
+        typeof selectedProduct.unit === "object"
+          ? selectedProduct.unit._id
+          : selectedProduct.unit,
+    };
+
+    form.setFieldsValue({ items });
   };
 
   const handleSave = async (values: SalePayload) => {
@@ -106,23 +126,23 @@ const SalesPage: React.FC = () => {
     }
   };
 
-  // Prepare table data
   const dataSource = sales.map((sale) => ({
     key: sale._id,
-    customerName: typeof sale.customer === "object" ? sale.customer?.name : "-",
+    customerName:
+      typeof sale.customer === "object" ? sale.customer?.name : "-",
     productSummary:
-      sale.items && sale.items.length > 0
+      sale.items?.length > 0
         ? sale.items
             .map(
               (item: any) =>
                 `${item.product?.name || "-"} (${item.quantity} ${
                   item.unit?.name || "pcs"
-                })`,
+                })`
             )
             .join(", ")
         : "-",
     sellingPriceSummary:
-      sale.items && sale.items.length > 0
+      sale.items?.length > 0
         ? sale.items.map((item: any) => `₹${item.sellingPrice ?? 0}`).join(", ")
         : "-",
     grandTotal: sale.grandTotal,
@@ -141,23 +161,14 @@ const SalesPage: React.FC = () => {
     {
       title: "Actions",
       render: (_: any, record: any) => (
-        <div className="flex gap-2">
-          <button
-            onClick={() => openModal(record.fullSale)}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] hover:bg-[#001a33] text-white"
-          >
-            Edit
+        <Popconfirm
+          title="Are you sure?"
+          onConfirm={() => handleDelete(record.fullSale._id)}
+        >
+          <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
+            Delete
           </button>
-
-          <Popconfirm
-            title="Are you sure?"
-            onConfirm={() => handleDelete(record.fullSale._id)}
-          >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 hover:bg-red-700 text-white">
-              Delete
-            </button>
-          </Popconfirm>
-        </div>
+        </Popconfirm>
       ),
     },
   ];
@@ -201,7 +212,6 @@ const SalesPage: React.FC = () => {
             rules={[{ required: true }]}
           >
             <Select
-              placeholder="Select customer"
               options={customers.map((c: any) => ({
                 label: c.name,
                 value: c._id,
@@ -225,15 +235,20 @@ const SalesPage: React.FC = () => {
                             label: p.name,
                             value: p._id,
                           }))}
+                          onChange={(value) =>
+                            handleProductChange(value, name)
+                          }
                         />
                       </Form.Item>
 
+                     
                       <Form.Item
                         name={[name, "unit"]}
                         label="Unit"
                         rules={[{ required: true }]}
                       >
                         <Select
+                          disabled
                           options={units.map((u: any) => ({
                             label: u.name,
                             value: u._id,
@@ -306,14 +321,14 @@ const SalesPage: React.FC = () => {
                 form.resetFields();
                 setEditingSale(null);
               }}
-              className="px-5 py-2 border border-[#00264d] text-[#00264d] rounded hover:bg-[#00264d] hover:text-white"
+              className="px-5 py-2 border border-[#00264d] text-[#00264d] rounded"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="px-6 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
+              className="px-6 py-2 bg-[#00264d] text-white rounded"
             >
               {editingSale ? "Update Sale" : "Save Sale"}
             </button>

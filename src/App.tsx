@@ -61,7 +61,19 @@ const App = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Sider trigger={null} collapsible collapsed={collapsed}>
+    <Sider
+  trigger={null}
+  collapsible
+  collapsed={collapsed}
+  style={{
+    height: "100vh",
+    position: "fixed",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    overflow: "auto",
+  }}
+>
         <div
           style={{
             height: 64,
@@ -173,7 +185,12 @@ const App = () => {
         />
       </Sider>
 
-      <Layout>
+      <Layout
+  style={{
+    marginLeft: collapsed ? 80 : 200,
+    transition: "all 0.2s",
+  }}
+>
         <Header
           style={{
             padding: "0 24px 0 0",
