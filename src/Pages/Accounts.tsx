@@ -54,6 +54,7 @@ const AccountPage: React.FC = () => {
       }
       setModalVisible(false);
       form.resetFields();
+      setEditingAccount(null);
     } catch (err) {
       message.error("Error saving account");
     }
@@ -82,18 +83,19 @@ const AccountPage: React.FC = () => {
       title: "Actions",
       key: "action",
       render: (_: any, record: Account) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => openModal(record)}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
+            className="w-full sm:w-auto px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
           >
             Edit
           </button>
+
           <Popconfirm
             title="Are you sure you want to deactivate this account?"
             onConfirm={() => handleDeactivate(record._id)}
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+            <button className="w-full sm:w-auto px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
               Deactivate
             </button>
           </Popconfirm>
@@ -104,25 +106,31 @@ const AccountPage: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-xl font-semibold">Accounts</h2>
         <button
-          className="px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
+          className="w-full sm:w-auto px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
           onClick={() => openModal()}
         >
           Add Account
         </button>
       </div>
 
-      <Table
-        dataSource={accounts}
-        columns={columns}
-        rowKey="_id"
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      {/* Responsive Table */}
+      <div className="overflow-x-auto">
+        <Table
+          dataSource={accounts}
+          columns={columns}
+          rowKey="_id"
+          loading={isLoading}
+          bordered
+          pagination={{ pageSize: 5 }}
+          className="erp-table min-w-[700px]"
+        />
+      </div>
 
+      {/* Modal */}
       <Modal
         title={editingAccount ? "Edit Account" : "Add Account"}
         open={modalVisible}
@@ -132,8 +140,15 @@ const AccountPage: React.FC = () => {
           setEditingAccount(null);
         }}
         onOk={() => form.submit()}
+        width="100%"
+        style={{ maxWidth: 500 }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSave}
+          className="space-y-2"
+        >
           <Form.Item
             label="Name"
             name="name"

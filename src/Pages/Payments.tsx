@@ -3,46 +3,64 @@ import { Table, Select, Spin, Alert } from "antd";
 import { useGetCustomers } from "../Utils/customerApi";
 import { useGetCustomerLedger } from "../Utils/CustomerLedgerApi";
 
-const { Option } = Select;
-
 const CustomerLedgerPage = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<string>("");
 
-  const { data: customers, isLoading: isCustomersLoading, error: customersError } = useGetCustomers();
-  const { data, isLoading: isLedgerLoading, error: ledgerError } = useGetCustomerLedger(selectedCustomer);
+  const {
+    data: customers,
+    isLoading: isCustomersLoading,
+    error: customersError,
+  } = useGetCustomers();
 
+  const {
+    data,
+    isLoading: isLedgerLoading,
+    error: ledgerError,
+  } = useGetCustomerLedger(selectedCustomer);
 
   const columns = [
     {
       title: "Date",
       dataIndex: "date",
-      render: (v?: string) => (v ? new Date(v).toLocaleDateString() : "-"),
+      responsive: ["xs", "sm", "md", "lg"],
+      render: (v?: string) =>
+        v ? new Date(v).toLocaleDateString("en-IN") : "-",
     },
     {
       title: "Type",
       dataIndex: "type",
+      responsive: ["xs", "sm", "md", "lg"],
     },
     {
       title: "Debit (Sale)",
       dataIndex: "debit",
-      render: (v: number) => `₹${v}`,
+      responsive: ["sm", "md", "lg"],
+      render: (v: number) => `₹${v || 0}`,
     },
     {
       title: "Credit (Payment)",
       dataIndex: "credit",
-      render: (v: number) => `₹${v}`,
+      responsive: ["md", "lg"],
+      render: (v: number) => `₹${v || 0}`,
     },
     {
       title: "Balance",
       dataIndex: "balance",
-      render: (v: number) => `₹${v}`,
+      responsive: ["xs", "sm", "md", "lg"],
+      render: (v: number) => (
+        <span className="font-semibold">₹{v}</span>
+      ),
     },
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Customer Ledger</h2>
+    <div className="w-full">
+
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">
+          Customer Ledger
+        </h2>
 
         {isCustomersLoading ? (
           <Spin />
@@ -50,55 +68,82 @@ const CustomerLedgerPage = () => {
           <Alert type="error" message="Failed to load customers" />
         ) : (
           <Select
-            style={{ width: 260 }}
+            className="w-full sm:w-72"
             placeholder="Select Customer"
             onChange={(val) => setSelectedCustomer(val)}
             value={selectedCustomer || undefined}
+            allowClear
           >
             {customers?.map((c: any) => (
-              <Option key={c._id} value={c._id}>
+              <Select.Option key={c._id} value={c._id}>
                 {c.name}
-              </Option>
+              </Select.Option>
             ))}
           </Select>
         )}
       </div>
 
+      {/* SUMMARY CARDS */}
       {data && (
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div className="p-3 border rounded bg-white">
-            <p className="text-sm text-gray-500">Total Sales</p>
-            <p className="text-lg font-semibold">₹{data.totalSalesAmount}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <div className="p-4 border rounded-xl bg-white shadow-sm">
+            <p className="text-xs sm:text-sm text-gray-500">
+              Total Sales
+            </p>
+            <p className="text-base sm:text-lg font-semibold">
+              ₹{data.totalSalesAmount}
+            </p>
           </div>
 
-          <div className="p-3 border rounded bg-white">
-            <p className="text-sm text-gray-500">Total Received</p>
-            <p className="text-lg font-semibold">₹{data.totalReceivedAmount}</p>
+          <div className="p-4 border rounded-xl bg-white shadow-sm">
+            <p className="text-xs sm:text-sm text-gray-500">
+              Total Received
+            </p>
+            <p className="text-base sm:text-lg font-semibold">
+              ₹{data.totalReceivedAmount}
+            </p>
           </div>
 
-          <div className="p-3 border rounded bg-white">
-            <p className="text-sm text-gray-500">Balance</p>
-            <p className="text-lg font-semibold">₹{data.balance}</p>
+          <div className="p-4 border rounded-xl bg-white shadow-sm">
+            <p className="text-xs sm:text-sm text-gray-500">
+              Balance
+            </p>
+            <p className="text-base sm:text-lg font-semibold text-red-600">
+              ₹{data.balance}
+            </p>
           </div>
         </div>
       )}
 
-      {ledgerError && <Alert message="Failed to load ledger" type="error" className="mb-4" />}
+      {/* ERROR */}
+      {ledgerError && (
+        <Alert
+          message="Failed to load ledger"
+          type="error"
+          className="mb-4"
+        />
+      )}
 
-      <Table
-        rowKey={(record, i) => (record.date || "") + record.type + record.debit + i}
-        columns={columns}
-        dataSource={data?.ledger || []}
-        loading={isLedgerLoading}
-        bordered
-        className="erp-table"
-        pagination={false}
-        locale={{
-          emptyText: selectedCustomer
-            ? "No ledger data for this customer"
-            : "Select a customer to view ledger",
-        }}
-      />
+      {/* TABLE WRAPPER FOR SCROLL */}
+      <div className="w-full overflow-x-auto">
+        <Table
+          rowKey={(record: any, i) =>
+            (record.date || "") + record.type + record.debit + i
+          }
+          columns={columns}
+          dataSource={data?.ledger || []}
+          loading={isLedgerLoading}
+          bordered
+          pagination={false}
+          scroll={{ x: "max-content" }}   // 🔥 horizontal scroll enabled
+          className="min-w-[600px] erp-table"
+          locale={{
+            emptyText: selectedCustomer
+              ? "No ledger data for this customer"
+              : "Select a customer to view ledger",
+          }}
+        />
+      </div>
     </div>
   );
 };

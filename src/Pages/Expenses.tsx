@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Table, Modal, Form, Input, message, Select, DatePicker } from "antd";
+import {
+  Table,
+  Modal,
+  Form,
+  Input,
+  message,
+  Select,
+  DatePicker,
+} from "antd";
 import moment from "moment";
 import { useGetExpenses, useCreateExpense } from "../Utils/ExpenseAPI";
 import { useGetCategories } from "../Utils/ExpenseCategoryAPI";
@@ -29,9 +37,9 @@ const ExpensePage: React.FC = () => {
         vendor: values.vendor,
         amount: Number(values.amount),
         paymentMethod: values.paymentMethod,
-     
         date: values.date ? values.date.toISOString() : undefined,
       });
+
       message.success("Expense created successfully");
       form.resetFields();
       setModalVisible(false);
@@ -41,19 +49,35 @@ const ExpensePage: React.FC = () => {
   };
 
   const columns = [
-    { title: "Category", dataIndex: ["category", "name"], key: "category" },
-    { title: "Account", dataIndex: ["account", "name"], key: "account" },
+    {
+      title: "Category",
+      dataIndex: ["category", "name"],
+      key: "category",
+      responsive: ["xs", "sm", "md", "lg"],
+    },
+    {
+      title: "Account",
+      dataIndex: ["account", "name"],
+      key: "account",
+      responsive: ["sm", "md", "lg"],
+    },
     {
       title: "Vendor",
       dataIndex: ["vendor", "name"],
       key: "vendor",
       render: (v: string) => v || "-",
+      responsive: ["md", "lg"],
     },
-    { title: "Amount", dataIndex: "amount", key: "amount" },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      key: "amount",
+    },
     {
       title: "Payment Method",
       dataIndex: "paymentMethod",
       key: "paymentMethod",
+      responsive: ["sm", "md", "lg"],
     },
     {
       title: "Date",
@@ -64,29 +88,39 @@ const ExpensePage: React.FC = () => {
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Expenses</h2>
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h2 className="text-xl sm:text-2xl font-semibold">Expenses</h2>
+
         <button
-          className="px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
+          className="w-full sm:w-auto px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
           onClick={openModal}
         >
           Add Expense
         </button>
       </div>
 
-      <Table
-        dataSource={expenses}
-        columns={columns}
-        rowKey="_id"
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <Table
+          dataSource={expenses}
+          columns={columns}
+          rowKey="_id"
+          loading={isLoading}
+          bordered
+          pagination={{ pageSize: 8 }}
+          scroll={{ x: "max-content" }}
+          className="erp-table"
+        />
+      </div>
 
+      {/* Modal */}
       <Modal
         title="Add Expense"
         open={modalVisible}
+        width={window.innerWidth < 640 ? "95%" : 500}
         onCancel={() => {
           setModalVisible(false);
           form.resetFields();
@@ -100,26 +134,44 @@ const ExpensePage: React.FC = () => {
             rules={[{ required: true }]}
           >
             <Select
-              options={categories.map((c) => ({ value: c._id, label: c.name }))}
+              options={categories.map((c) => ({
+                value: c._id,
+                label: c.name,
+              }))}
             />
           </Form.Item>
+
           <Form.Item
             label="Account"
             name="account"
             rules={[{ required: true }]}
           >
             <Select
-              options={accounts.map((a) => ({ value: a._id, label: a.name }))}
+              options={accounts.map((a) => ({
+                value: a._id,
+                label: a.name,
+              }))}
             />
           </Form.Item>
+
           <Form.Item label="Vendor" name="vendor">
             <Select
-              options={vendors.map((v) => ({ value: v._id, label: v.name }))}
+              allowClear
+              options={vendors.map((v) => ({
+                value: v._id,
+                label: v.name,
+              }))}
             />
           </Form.Item>
-          <Form.Item label="Amount" name="amount" rules={[{ required: true }]}>
+
+          <Form.Item
+            label="Amount"
+            name="amount"
+            rules={[{ required: true }]}
+          >
             <Input type="number" />
           </Form.Item>
+
           <Form.Item
             label="Payment Method"
             name="paymentMethod"
@@ -132,13 +184,13 @@ const ExpensePage: React.FC = () => {
               }))}
             />
           </Form.Item>
-          
+
           <Form.Item label="Date" name="date">
-            <DatePicker style={{ width: "100%" }} />
+            <DatePicker className="w-full" />
           </Form.Item>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 

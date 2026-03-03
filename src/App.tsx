@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Layout, Menu, Button, theme, Dropdown, Space, Avatar } from 'antd';
-import { useDispatch, useSelector } from 'react-redux';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { logout } from './store/authSlice';
-import type { RootState } from './store';
-import logo from './assets/eeee.png';
+import { useState } from "react";
+import { Layout, Menu, Button, theme, Dropdown, Space, Avatar } from "antd";
+import { useDispatch, useSelector } from "react-redux";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { logout } from "./store/authSlice";
+import type { RootState } from "./store";
+import logo from "./assets/eeee.png";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -17,7 +17,7 @@ import {
   BankOutlined,
   DollarOutlined,
   LogoutOutlined,
-} from '@ant-design/icons';
+} from "@ant-design/icons";
 
 const { Header, Sider, Content } = Layout;
 
@@ -27,32 +27,27 @@ const App = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-
   const { user } = useSelector((state: RootState) => state.auth);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login');
+    navigate("/login");
   };
-
 
   const userMenuItems = [
     {
-  key: "profile",
-  label: <span style={{ color: "#9CA3AF" }}>My Profile</span>, // darker grey
-  icon: <UserOutlined style={{ color: "#9CA3AF" }} />,
-},
-    {
-      type: 'divider' as const,
+      key: "profile",
+      label: <span style={{ color: "#9CA3AF" }}>My Profile</span>,
+      icon: <UserOutlined style={{ color: "#9CA3AF" }} />,
     },
+    { type: "divider" as const },
     {
-      key: 'logout',
-      label: 'Logout',
+      key: "logout",
+      label: "Logout",
       icon: <LogoutOutlined />,
       danger: true,
       onClick: handleLogout,
@@ -61,19 +56,24 @@ const App = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-    <Sider
-  trigger={null}
-  collapsible
-  collapsed={collapsed}
-  style={{
-    height: "100vh",
-    position: "fixed",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    overflow: "auto",
-  }}
->
+      <Sider
+        trigger={null}
+        collapsible
+        collapsed={collapsed}
+        breakpoint="lg"
+        collapsedWidth={0}
+        onBreakpoint={(broken) => {
+          setCollapsed(broken);
+        }}
+        style={{
+          height: "100vh",
+          position: "fixed",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          overflow: "auto",
+        }}
+      >
         <div
           style={{
             height: 64,
@@ -131,7 +131,6 @@ const App = () => {
                 { key: "/sales", label: "New Sale" },
                 { key: "/invoices", label: "Invoices" },
                 { key: "/sales-return", label: "Sales Return" },
-
                 { key: "/customer-payment", label: "Customer Payments" },
               ],
             },
@@ -186,11 +185,11 @@ const App = () => {
       </Sider>
 
       <Layout
-  style={{
-    marginLeft: collapsed ? 80 : 200,
-    transition: "all 0.2s",
-  }}
->
+        style={{
+          marginLeft: collapsed ? 0 : 200,
+          transition: "all 0.2s",
+        }}
+      >
         <Header
           style={{
             padding: "0 24px 0 0",
@@ -207,14 +206,12 @@ const App = () => {
             style={{ fontSize: 16, width: 64, height: 64 }}
           />
 
-          <Dropdown
-            menu={{ items: userMenuItems }}
-            placement="bottomRight"
-            arrow
-          >
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
             <Space style={{ cursor: "pointer", padding: "0 8px" }}>
               <Avatar icon={<UserOutlined />} />
-              <span style={{ fontWeight: 500 }}>{user?.name || "Admin"}</span>
+              <span style={{ fontWeight: 500 }}>
+                {user?.name || "Admin"}
+              </span>
             </Space>
           </Dropdown>
         </Header>

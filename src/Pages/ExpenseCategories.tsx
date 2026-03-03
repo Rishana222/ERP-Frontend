@@ -5,7 +5,7 @@ import {
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
-} from "../Utils/ExpenseCategoryAPI"; // your Axios API
+} from "../Utils/ExpenseCategoryAPI";
 import type { Category, CategoryPayload } from "../Utils/ExpenseCategoryAPI";
 
 const ExpenseCategoryPage: React.FC = () => {
@@ -15,7 +15,8 @@ const ExpenseCategoryPage: React.FC = () => {
   const deleteMutation = useDeleteCategory();
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] =
+    useState<Category | null>(null);
   const [form] = Form.useForm();
 
   const openModal = (category?: Category) => {
@@ -59,16 +60,26 @@ const ExpenseCategoryPage: React.FC = () => {
   };
 
   const columns = [
-    { title: "Name", dataIndex: "name", key: "name" },
-    { title: "Description", dataIndex: "description", key: "description" },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      responsive: ["xs", "sm", "md", "lg"],
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+      responsive: ["sm", "md", "lg"],
+    },
     {
       title: "Actions",
       key: "actions",
       render: (_: any, record: Category) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => openModal(record)}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
+            className="w-full sm:w-auto px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
           >
             Edit
           </button>
@@ -77,7 +88,7 @@ const ExpenseCategoryPage: React.FC = () => {
             title="Are you sure?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+            <button className="w-full sm:w-auto px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
               Delete
             </button>
           </Popconfirm>
@@ -87,31 +98,45 @@ const ExpenseCategoryPage: React.FC = () => {
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Expense Categories</h2>
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h2 className="text-xl sm:text-2xl font-semibold">
+          Expense Categories
+        </h2>
+
         <button
-          className="px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
+          className="w-full sm:w-auto px-4 py-2 bg-[#00264d] text-white rounded hover:bg-[#001a33]"
           onClick={() => openModal()}
         >
           Add Expense Category
         </button>
       </div>
 
-      <Table
-        dataSource={categories}
-        columns={columns}
-        rowKey="_id"
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <Table
+          dataSource={categories}
+          columns={columns}
+          rowKey="_id"
+          loading={isLoading}
+          bordered
+          pagination={{ pageSize: 8 }}
+          scroll={{ x: "max-content" }}
+          className="erp-table"
+        />
+      </div>
 
+      {/* Modal */}
       <Modal
         title={
-          editingCategory ? "Edit Expense Category" : "Add Expense Category"
+          editingCategory
+            ? "Edit Expense Category"
+            : "Add Expense Category"
         }
         open={modalVisible}
+        width={window.innerWidth < 640 ? "95%" : 500}
         onCancel={() => {
           setModalVisible(false);
           form.resetFields();
@@ -129,12 +154,13 @@ const ExpenseCategoryPage: React.FC = () => {
           >
             <Input />
           </Form.Item>
+
           <Form.Item label="Description" name="description">
             <Input />
           </Form.Item>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 

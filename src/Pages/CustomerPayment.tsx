@@ -30,16 +30,11 @@ const CustomerPayments = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-
   const { data: customers = [] } = useGetCustomers();
-
   const { data: paymentsData = [], refetch } =
     useGetCustomerPayments(selectedCustomer || "");
-
   const { data: sales = [] } = useGetSales(selectedCustomer || "");
-
   const { mutate: addPayment, isLoading } = useCreateCustomerPayment();
-
 
   const openModal = (customerId: string) => {
     setSelectedCustomer(customerId);
@@ -51,7 +46,6 @@ const CustomerPayments = () => {
   const handleSaleChange = (saleId: string) => {
     const sale = sales.find((s: any) => s._id === saleId);
     if (!sale) return;
-
     const due = sale.grandTotal - (sale.paidAmount || 0);
     form.setFieldsValue({ amount: due });
   };
@@ -72,7 +66,7 @@ const CustomerPayments = () => {
         paymentDate: (values.paymentDate as Moment).format("YYYY-MM-DD"),
         paymentMode: values.paymentMode,
         note: values.note || "",
-        account: values.account, 
+        account: values.account,
       };
 
       addPayment(payload, {
@@ -81,24 +75,18 @@ const CustomerPayments = () => {
           setIsModalOpen(false);
           refetch();
         },
-        onError: (err: any) => {
-          message.error(
-            err?.response?.data?.message || "Failed to add payment"
-          );
-        },
       });
-    } catch (err) {
-      console.log(err);
-    }
+    } catch {}
   };
 
-
-
+  /* MOBILE CUSTOMER TABLE */
   const customerColumns = [
-    { title: "Name", dataIndex: "name" },
-    { title: "Phone", dataIndex: "phone" },
     {
-      title: "Total Paid",
+      title: "Customer",
+      dataIndex: "name",
+    },
+    {
+      title: "Paid",
       render: (_: any, record: any) => {
         const totalPaid =
           paymentsData
@@ -109,49 +97,58 @@ const CustomerPayments = () => {
       },
     },
     {
-      title: "Action",
+      title: "",
       render: (_: any, record: any) => (
-        <Button type="primary" onClick={() => openModal(record._id)}>
-          Add Payment
-        </Button>
+      <Button
+  type="primary"
+  
+  className="w-full sm:w-auto"
+  onClick={() => openModal(record._id)}
+>
+  Add Payments
+</Button>
       ),
     },
   ];
 
+  /* MOBILE PAYMENT TABLE */
   const paymentColumns = [
     {
       title: "Date",
       dataIndex: "paymentDate",
-      render: (date: string) => moment(date).format("DD-MM-YYYY"),
+      render: (date: string) => moment(date).format("DD-MM-YY"),
     },
     {
-      title: "Amount",
+      title: "Amt",
       dataIndex: "amount",
       render: (amt: number) => `₹${amt}`,
     },
-    { title: "Mode", dataIndex: "paymentMode" },
-    { title: "Note", dataIndex: "note" },
   ];
 
-
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Customer Payments</h2>
+    <div className="p-3">
+      <h2 className="text-lg font-semibold mb-3">
+        Customer Payments
+      </h2>
 
+      {/* CUSTOMER TABLE */}
       <Table
         rowKey="_id"
         dataSource={customers}
         columns={customerColumns}
         bordered
-        className="erp-table"
         pagination={false}
-        style={{ marginBottom: 20 }}
+    
+        scroll={{ x: true }}
+        style={{ marginBottom: 15 }}
+        className="erp-table"
       />
 
+      {/* PAYMENT TABLE */}
       {selectedCustomer && (
         <>
-          <h3 className="text-lg font-semibold mb-2">
-            Payments for{" "}
+          <h3 className="text-sm font-semibold mb-2 break-words">
+            Payments -{" "}
             {customers.find((c: any) => c._id === selectedCustomer)?.name}
           </h3>
 
@@ -160,25 +157,30 @@ const CustomerPayments = () => {
             dataSource={paymentsData}
             columns={paymentColumns}
             bordered
-            className="erp-table"
             pagination={false}
+          
+            scroll={{ x: true }}
+            className="erp-table"
           />
         </>
       )}
 
+      {/* MODAL */}
       <Modal
-        title="Add Customer Payment"
+        title="Add Payment"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={handleSave}
         confirmLoading={isLoading}
+        // width="95%"
+        centered
         destroyOnClose
       >
         <Form form={form} layout="vertical">
           <Form.Item
             label="Invoice"
             name="sale"
-            rules={[{ required: true, message: "Invoice is required" }]}
+            rules={[{ required: true }]}
           >
             <Select
               placeholder="Select invoice"
@@ -190,24 +192,19 @@ const CustomerPayments = () => {
                   const due = s.grandTotal - (s.paidAmount || 0);
                   return (
                     <Option key={s._id} value={s._id}>
-                      {s.invoiceNumber} — Due ₹{due}
+                      {s.invoiceNumber} — ₹{due}
                     </Option>
                   );
                 })}
             </Select>
           </Form.Item>
 
-          <Form.Item
-            label="Amount"
-            name="amount"
-            rules={[{ required: true }]}
-          >
-
+          <Form.Item label="Amount" name="amount" rules={[{ required: true }]}>
             <Input type="number" />
           </Form.Item>
 
           <Form.Item
-            label="Payment Date"
+            label="Date"
             name="paymentDate"
             rules={[{ required: true }]}
           >
@@ -217,11 +214,11 @@ const CustomerPayments = () => {
           <Form.Item
             label="Account"
             name="account"
-            rules={[{ required: true, message: "Account is required" }]}
+            rules={[{ required: true }]}
           >
             <Select placeholder="Select account">
-              <Option value="69a3fd27889e8eb025fe3752">Cash Account</Option>
-              <Option value="69a3fd2e889e8eb025fe3755">Bank Account</Option>
+              <Option value="69a3fd27889e8eb025fe3752">Cash</Option>
+              <Option value="69a3fd2e889e8eb025fe3755">Bank</Option>
             </Select>
           </Form.Item>
 
