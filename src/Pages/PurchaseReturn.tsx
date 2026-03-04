@@ -32,7 +32,7 @@ function PurchaseReturnPage() {
             qty: 0,
             costPrice: i.costPrice,
             total: 0,
-          })),
+          }))
         );
       }
     } else {
@@ -56,7 +56,7 @@ function PurchaseReturnPage() {
     }
 
     const payload = {
-      purchase: selectedPurchase, 
+      purchase: selectedPurchase,
       items: items
         .filter((i) => i.qty > 0)
         .map((i) => ({ product: i.productId, quantity: i.qty })),
@@ -68,7 +68,7 @@ function PurchaseReturnPage() {
       return;
     }
 
-    createPurchaseReturn.mutate(payload,  {
+    createPurchaseReturn.mutate(payload, {
       onSuccess: () => {
         message.success("Purchase Return added successfully!");
         setIsAddModalOpen(false);
@@ -97,7 +97,7 @@ function PurchaseReturnPage() {
           : id?._id?.slice(-6).toUpperCase() || "-",
     },
     {
-      title: "Purchase ID ",
+      title: "Purchase ID",
       dataIndex: "purchase",
       render: (purchase: any) =>
         typeof purchase === "string"
@@ -116,13 +116,14 @@ function PurchaseReturnPage() {
       render: (_: any, record: any) =>
         record?.items?.reduce(
           (sum: number, item: any) => sum + (item.quantity || 0),
-          0,
+          0
         ) || 0,
     },
     {
       title: "Grand Total",
       dataIndex: "grandTotal",
-      render: (amount: number) => `₹ ${amount?.toLocaleString("en-IN") || 0}`,
+      render: (amount: number) =>
+        `₹ ${amount?.toLocaleString("en-IN") || 0}`,
     },
     {
       title: "Action",
@@ -136,35 +137,38 @@ function PurchaseReturnPage() {
 
   return (
     <>
-     
-      <div className="flex justify-between items-center mb-4">
+      {/* Responsive Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-xl font-semibold">Purchase Returns</h2>
         <Button type="primary" onClick={() => setIsAddModalOpen(true)}>
           Add Purchase Return
         </Button>
       </div>
 
-    
+      {/* Responsive Main Table */}
       <Table
         rowKey="_id"
         columns={columns}
         dataSource={Array.isArray(returnsData) ? returnsData : []}
         loading={isLoading}
         bordered
-         className="erp-table"
+        className="erp-table"
+        scroll={{ x: "max-content" }}
       />
 
+      {/* View Modal */}
       <Modal
         title="Purchase Return Details"
         open={isViewModalOpen}
         onCancel={() => setIsViewModalOpen(false)}
         footer={null}
-        width={900}
+        width="95%"
+        style={{ maxWidth: 1000 }}
       >
         {selectedReturn && (
           <div className="space-y-6">
             <div className="bg-gray-50 p-4 rounded border">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <p>
                   <strong>Return No:</strong>{" "}
                   {selectedReturn._id?.slice(-6).toUpperCase()}
@@ -184,24 +188,21 @@ function PurchaseReturnPage() {
                 <p>
                   <strong>Date:</strong>{" "}
                   {selectedReturn.createdAt
-                    ? new Date(selectedReturn.createdAt).toLocaleDateString(
-                        "en-IN",
-                      )
+                    ? new Date(
+                        selectedReturn.createdAt
+                      ).toLocaleDateString("en-IN")
                     : "-"}
-                </p>
-                <p className="col-span-2">
-                  <strong>Note:</strong> {selectedReturn.note || "-"}
                 </p>
               </div>
             </div>
 
-          
             <Table
               rowKey="_id"
               pagination={false}
               dataSource={selectedReturn.items || []}
               bordered
               className="erp-table"
+              scroll={{ x: "max-content" }}
               columns={[
                 {
                   title: "Product",
@@ -226,7 +227,6 @@ function PurchaseReturnPage() {
               ]}
             />
 
-        
             <div className="flex justify-end">
               <div className="bg-blue-50 px-6 py-3 rounded border text-right">
                 <h3 className="text-lg font-semibold">
@@ -239,19 +239,20 @@ function PurchaseReturnPage() {
         )}
       </Modal>
 
-     
+      {/* Add Modal */}
       <Modal
         title="Add Purchase Return"
         open={isAddModalOpen}
         onCancel={() => setIsAddModalOpen(false)}
         footer={null}
-        width={800}
+        width="95%"
+        style={{ maxWidth: 900 }}
       >
         <Form layout="vertical" form={form}>
           <Form.Item
             label="Select Purchase"
             name="purchase"
-            rules={[{ required: true, message: "Please select a purchase" }]}
+            rules={[{ required: true }]}
           >
             <Select
               placeholder="Select purchase"
@@ -270,6 +271,7 @@ function PurchaseReturnPage() {
               rowKey="productId"
               pagination={false}
               dataSource={items}
+              scroll={{ x: "max-content" }}
               columns={[
                 { title: "Product", dataIndex: "product" },
                 {
@@ -304,14 +306,15 @@ function PurchaseReturnPage() {
             />
           )}
 
-          <div className="flex justify-between mt-4 items-center">
-            <div>
-              <strong>
-                Grand Total: ₹ {grandTotal.toLocaleString("en-IN")}
-              </strong>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
+            <strong>
+              Grand Total: ₹ {grandTotal.toLocaleString("en-IN")}
+            </strong>
+
+            <div className="flex gap-2 w-full sm:w-auto justify-end">
+              <Button onClick={() => setIsAddModalOpen(false)}>
+                Cancel
+              </Button>
               <Button type="primary" onClick={handleSaveReturn}>
                 Save Return
               </Button>

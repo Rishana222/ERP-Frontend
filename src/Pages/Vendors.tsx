@@ -21,8 +21,6 @@ function VendorPage() {
   const updateMutation = useUpdateVendor();
   const deleteMutation = useDeleteVendor();
 
-
-
   const handleSave = (values: any) => {
     if (editingVendor) {
       updateMutation.mutate(
@@ -35,7 +33,7 @@ function VendorPage() {
           },
           onError: (err: any) =>
             toast.error(err?.response?.data?.message || "Update failed"),
-        },
+        }
       );
     } else {
       createMutation.mutate(values, {
@@ -50,8 +48,6 @@ function VendorPage() {
     }
   };
 
-
-
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id, {
       onSuccess: () => {
@@ -62,15 +58,13 @@ function VendorPage() {
     });
   };
 
-
-
   const closeModal = () => {
     setOpenModal(false);
     setEditingVendor(null);
     form.resetFields();
   };
 
-
+  /* ================= RESPONSIVE TABLE ================= */
 
   const columns = [
     {
@@ -81,36 +75,43 @@ function VendorPage() {
     {
       title: "Phone",
       dataIndex: "phone",
+      responsive: ["md"],
     },
     {
       title: "Email",
       dataIndex: "email",
+      responsive: ["lg"],
     },
     {
       title: "GST Number",
       dataIndex: "gstNumber",
+      responsive: ["lg"],
     },
     {
       title: "Status",
       dataIndex: "isActive",
       render: (isActive: boolean) =>
         isActive ? (
-          <span className="text-green-600 font-medium">Active</span>
+          <span className="text-green-600 font-medium text-xs sm:text-sm">
+            Active
+          </span>
         ) : (
-          <span className="text-red-600 font-medium">Inactive</span>
+          <span className="text-red-600 font-medium text-xs sm:text-sm">
+            Inactive
+          </span>
         ),
     },
     {
       title: "Action",
       render: (_: any, record: Vendor) => (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => {
               setEditingVendor(record);
               form.setFieldsValue(record);
               setOpenModal(true);
             }}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white"
+            className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded bg-[#00264d] text-white"
           >
             Edit
           </button>
@@ -119,7 +120,7 @@ function VendorPage() {
             title="Are you sure delete?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
+            <button className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded bg-red-600 text-white">
               Delete
             </button>
           </Popconfirm>
@@ -129,12 +130,14 @@ function VendorPage() {
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Vendors</h2>
+    <div className="w-full overflow-x-hidden">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">Vendors</h2>
 
         <Button
           type="primary"
+          className="w-full sm:w-auto"
           onClick={() => {
             setEditingVendor(null);
             form.resetFields();
@@ -145,22 +148,28 @@ function VendorPage() {
         </Button>
       </div>
 
-      <Table
-        rowKey="_id"
-        columns={columns}
-        dataSource={data}
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      {/* Table */}
+      <div className="w-full overflow-x-auto">
+        <Table
+          rowKey="_id"
+          columns={columns}
+          dataSource={data}
+          loading={isLoading}
+          bordered
+          scroll={{ x: 700 }}
+          pagination={{ pageSize: 10 }}
+          className="erp-table"
+        />
+      </div>
 
-
-
+      {/* Modal */}
       <Modal
         open={openModal}
         title={editingVendor ? "Edit Vendor" : "Create Vendor"}
         onCancel={closeModal}
         onOk={() => form.submit()}
+        width="100%"
+        style={{ maxWidth: 600 }}
       >
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item
@@ -186,7 +195,6 @@ function VendorPage() {
           <Form.Item name="address" label="Address">
             <Input.TextArea placeholder="Enter address" />
           </Form.Item>
-     
 
           <Form.Item name="gstNumber" label="GST Number">
             <Input placeholder="Enter GST number" />
@@ -201,8 +209,8 @@ function VendorPage() {
             <Switch />
           </Form.Item>
         </Form>
-      </Modal >
-    </>
+      </Modal>
+    </div>
   );
 }
 

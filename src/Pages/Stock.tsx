@@ -1,21 +1,8 @@
 import React, { useState } from "react";
 import { Table, Button, Modal, Form, Select, InputNumber } from "antd";
 import type { TableColumnsType } from "antd";
-import { createStyles } from "antd-style";
 
 const { Option } = Select;
-
-const useStyle = createStyles(({ css }) => ({
-  customTable: css`
-    .ant-table {
-      .ant-table-body,
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #eaeaea transparent;
-      }
-    }
-  `,
-}));
 
 interface StockData {
   key: React.Key;
@@ -24,64 +11,88 @@ interface StockData {
   quantity: number;
 }
 
-const columns: TableColumnsType<StockData> = [
-  { title: "Product", dataIndex: "product", width: 150 },
-  { title: "Shop", dataIndex: "shop", width: 150 },
-  { title: "Quantity", dataIndex: "quantity", width: 100 },
-  {
-    title: "Action",
-    fixed: "end",
-    width: 120,
-    render: () => (
-      <div className="flex gap-2">
-        <a>Edit</a>
-        <a style={{ color: "red" }}>Delete</a>
-      </div>
-    ),
-  },
-];
-
 const Stock: React.FC = () => {
-  const { styles } = useStyle();
-
   const [openModal, setOpenModal] = useState(false);
   const [form] = Form.useForm();
 
   const dataSource: StockData[] = [];
 
   const handleAddStock = (values: any) => {
-    console.log("New Stock:", values);
+    console.log(values);
     setOpenModal(false);
     form.resetFields();
   };
 
-  return (
-    <div>
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Stocks</h2>
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" onClick={() => setOpenModal(true)}>
-            Add Stock
-          </Button>
+  const columns: TableColumnsType<StockData> = [
+    {
+      title: "Product",
+      dataIndex: "product",
+      ellipsis: true,
+    },
+    {
+      title: "Shop",
+      dataIndex: "shop",
+      ellipsis: true,
+    },
+    {
+      title: "Qty",
+      dataIndex: "quantity",
+      width: 70,
+    },
+    {
+      title: "Action",
+      width: 90,
+      render: () => (
+        <div className="flex flex-col gap-1 text-xs">
+          <a>Edit</a>
+          <a className="text-red-600">Delete</a>
         </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="w-full min-w-0 px-2 py-3">
+      
+      {/* Header */}
+      <div className="flex flex-col gap-2 mb-3">
+        <h2 className="text-lg font-semibold">Stocks</h2>
+
+        <Button
+          type="primary"
+          block
+          size="middle"
+          onClick={() => setOpenModal(true)}
+        >
+          Add Stock
+        </Button>
       </div>
 
-      <Table<StockData>
-        bordered
-        className={styles.customTable}
-        columns={columns}
-        dataSource={dataSource}
-        scroll={{ x: "max-content" }}
-        pagination={false}
-        rowKey="key"
-      />
+      {/* Table wrapper IMPORTANT */}
+      <div className="w-full min-w-0 overflow-x-auto">
+        <Table<StockData>
+          bordered
+          size="small"
+          columns={columns}
+          dataSource={dataSource}
+          rowKey="key"
+          pagination={{
+            pageSize: 5,
+            size: "small",
+          }}
+          scroll={{ x: 500 }}
+        />
+      </div>
 
+      {/* Modal */}
       <Modal
         title="Add Stock"
         open={openModal}
         onCancel={() => setOpenModal(false)}
         footer={null}
         destroyOnClose
+        width="95%"
+        style={{ maxWidth: 400 }}
       >
         <Form layout="vertical" form={form} onFinish={handleAddStock}>
           <Form.Item
@@ -89,7 +100,7 @@ const Stock: React.FC = () => {
             name="product"
             rules={[{ required: true }]}
           >
-            <Select placeholder="Select Product">
+            <Select placeholder="Select Product" size="middle">
               <Option value="prod1">Product 1</Option>
               <Option value="prod2">Product 2</Option>
             </Select>
@@ -100,7 +111,7 @@ const Stock: React.FC = () => {
             name="shop"
             rules={[{ required: true }]}
           >
-            <Select placeholder="Select Shop">
+            <Select placeholder="Select Shop" size="middle">
               <Option value="shop1">Main Shop</Option>
               <Option value="shop2">Branch Shop</Option>
             </Select>
@@ -112,10 +123,10 @@ const Stock: React.FC = () => {
             rules={[{ required: true }]}
             initialValue={0}
           >
-            <InputNumber min={0} style={{ width: "100%" }} />
+            <InputNumber min={0} className="w-full" />
           </Form.Item>
 
-          <Button type="primary" htmlType="submit" className="w-full">
+          <Button type="primary" htmlType="submit" block>
             Add Stock
           </Button>
         </Form>

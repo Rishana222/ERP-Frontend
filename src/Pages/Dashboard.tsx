@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Row, Col, Statistic, Divider } from "antd";
+import { Card, Row, Col, Statistic, Divider, Spin, message } from "antd";
 import {
   ShoppingOutlined,
   DollarCircleOutlined,
@@ -8,8 +8,18 @@ import {
   TeamOutlined,
   MoneyCollectOutlined,
 } from "@ant-design/icons";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 import axios from "axios";
 
 interface Stats {
@@ -19,16 +29,15 @@ interface Stats {
   vendors: number;
   customers: number;
   expenses: number;
+  profit: number;
 }
 
-// For line chart data
 interface TrendData {
   month: string;
   sales: number;
   purchases: number;
 }
 
-// Pie chart data type
 interface PieData {
   name: string;
   value: number;
@@ -42,69 +51,108 @@ const Dashboard: React.FC = () => {
     vendors: 0,
     customers: 0,
     expenses: 0,
+    profit: 0,
   });
 
   const [trendData, setTrendData] = useState<TrendData[]>([]);
   const [pieData, setPieData] = useState<PieData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch stats
+  // Utility: Generate a consistent color per category name
+  const stringToColor = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return `hsl(${hash % 360}, 65%, 50%)`;
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboard = async () => {
       try {
-        const [products, sales, purchases, vendors, customers, expenses] =
-          await Promise.all([
-            axios.get("/api/products"),
-            axios.get("/api/sales"),
-            axios.get("/api/purchases"),
-            axios.get("/api/vendors"),
-            axios.get("/api/customers"),
-            axios.get("/api/expenses"),
-          ]);
-
-        setStats({
-          products: products.data.length,
-          sales: sales.data.length,
-          purchases: purchases.data.length,
-          vendors: vendors.data.length,
-          customers: customers.data.length,
-          expenses: expenses.data.length,
-        });
-
-        // Example trend data: last 6 months
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-        setTrendData(
-          months.map((month, ) => ({
-            month,
-            sales: Math.floor(Math.random() * 1000),
-            purchases: Math.floor(Math.random() * 500),
-          }))
-        );
-
-        // Example pie data: distribution of categories
-        setPieData([
-          { name: "Electronics", value: 400 },
-          { name: "Furniture", value: 300 },
-          { name: "Clothing", value: 300 },
-          { name: "Other", value: 200 },
+        const [summaryRes, trendRes, categoryRes] = await Promise.all([
+          axios.get("http://localhost:3000/api/dashboard/summary"),
+          axios.get("http://localhost:3000/api/dashboard/trend"),
+          axios.get("http://localhost:3000/api/dashboard/category"),
         ]);
-      } catch (error) {
-        console.error("Error fetching stats:", error);
+
+        if (summaryRes.data.success) {
+          const data = summaryRes.data.data;
+          setStats({
+            products: data.totalProducts,
+            sales: data.totalSales,
+            purchases: data.totalPurchases,
+            vendors: data.totalVendors,
+            customers: data.totalCustomers,
+            expenses: data.totalExpenses,
+            profit: data.profit,
+          });
+        }
+
+        if (trendRes.data.success) setTrendData(trendRes.data.data);
+        if (categoryRes.data.success) setPieData(categoryRes.data.data);
+      } catch (error: any) {
+        console.error("Dashboard fetch error:", error);
+        message.error("Failed to load dashboard data.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchDashboard();
   }, []);
 
   const cards = [
-    { title: "Products", count: stats.products, icon: <ShoppingOutlined />, color: "#1890ff" },
-    { title: "Sales", count: stats.sales, icon: <DollarCircleOutlined />, color: "#52c41a" },
-    { title: "Purchases", count: stats.purchases, icon: <ShoppingCartOutlined />, color: "#faad14" },
-    { title: "Vendors", count: stats.vendors, icon: <TeamOutlined />, color: "#13c2c2" },
-    { title: "Customers", count: stats.customers, icon: <UserOutlined />, color: "#eb2f96" },
-    { title: "Expenses", count: stats.expenses, icon: <MoneyCollectOutlined />, color: "#722ed1" },
+    {
+      title: "Products",
+      count: stats.products,
+      icon: <ShoppingOutlined />,
+      color: "#1890ff",
+    },
+    {
+      title: "Sales",
+      count: stats.sales,
+      icon: <DollarCircleOutlined />,
+      color: "#52c41a",
+    },
+    {
+      title: "Purchases",
+      count: stats.purchases,
+      icon: <ShoppingCartOutlined />,
+      color: "#faad14",
+    },
+    {
+      title: "Vendors",
+      count: stats.vendors,
+      icon: <TeamOutlined />,
+      color: "#13c2c2",
+    },
+    {
+      title: "Customers",
+      count: stats.customers,
+      icon: <UserOutlined />,
+      color: "#eb2f96",
+    },
+    {
+      title: "Expenses",
+      count: stats.expenses,
+      icon: <MoneyCollectOutlined />,
+      color: "#722ed1",
+    },
+    {
+      title: "Profit",
+      count: stats.profit,
+      icon: <DollarCircleOutlined />,
+      color: "#ff4d4f",
+    },
   ];
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", marginTop: 100 }}>
+        <Spin size="large" tip="Loading dashboard..." />
+      </div>
+    );
 
   return (
     <div style={{ padding: 24 }}>
@@ -120,7 +168,12 @@ const Dashboard: React.FC = () => {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             >
-              <Statistic title={card.title} value={card.count} prefix={card.icon} valueStyle={{ color: card.color }} />
+              <Statistic
+                title={card.title}
+                value={card.count}
+                prefix={card.icon}
+                valueStyle={{ color: card.color }}
+              />
             </Card>
           </Col>
         ))}
@@ -128,7 +181,7 @@ const Dashboard: React.FC = () => {
 
       <Divider />
 
-      {/* Line Chart: Sales & Purchases Trends */}
+      {/* Sales & Purchases Trend */}
       <Row gutter={[16, 16]}>
         <Col xs={24} md={16}>
           <Card title="Sales & Purchases Trend">
@@ -137,21 +190,39 @@ const Dashboard: React.FC = () => {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="sales" stroke="#52c41a" strokeWidth={2} />
-                <Line type="monotone" dataKey="purchases" stroke="#faad14" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="sales"
+                  stroke="#52c41a"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="purchases"
+                  stroke="#faad14"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </Card>
         </Col>
 
-        {/* Pie Chart: Category Distribution */}
+        {/* Category Distribution */}
         <Col xs={24} md={8}>
           <Card title="Category Distribution">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label
+                >
+                  {pieData.map((entry) => (
+                    <Cell key={entry.name} fill={stringToColor(entry.name)} />
                   ))}
                 </Pie>
                 <Legend />

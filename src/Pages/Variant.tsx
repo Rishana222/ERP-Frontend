@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button, Form, Modal, Table, Popconfirm, Input, Select } from "antd";
 import { toast } from "react-toastify";
+import type { ColumnsType } from "antd/es/table";
 
 import {
   useGetVariants,
@@ -15,15 +16,13 @@ function VariantPage() {
   const [editingVariant, setEditingVariant] = useState<any>(null);
   const [form] = Form.useForm();
 
-  /* ================= API CALLS ================= */
-  const { data: variants, isLoading: variantsLoading } = useGetVariants();
-  const { data: products } = useGetProducts();
+  const { data: variants = [], isLoading: variantsLoading } = useGetVariants();
+  const { data: products = [] } = useGetProducts();
 
   const createMutation = useCreateVariant();
   const updateMutation = useUpdateVariant();
   const deleteMutation = useDeleteVariant();
 
-  /* ================= HANDLERS ================= */
   const handleSave = (values: any) => {
     if (editingVariant) {
       updateMutation.mutate(
@@ -34,7 +33,7 @@ function VariantPage() {
             closeModal();
           },
           onError: () => toast.error("Failed to update variant"),
-        },
+        }
       );
     } else {
       createMutation.mutate(values, {
@@ -69,20 +68,27 @@ function VariantPage() {
     form.resetFields();
   };
 
-  /* ================= TABLE COLUMNS ================= */
-  const columns = [
-    { title: "Variant Name", dataIndex: "name" },
+  const columns: ColumnsType<any> = [
+    {
+      title: "Variant Name",
+      dataIndex: "name",
+      ellipsis: true,
+      width: 180,
+    },
     {
       title: "Product",
-      render: (_: any, record: any) => record.product?.name || "-",
+      width: 180,
+      render: (_: any, record: any) =>
+        record.product?.name || "-",
     },
     {
       title: "Actions",
+      width: 160,
       render: (_: any, record: any) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => handleEdit(record)}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
+            className="px-3 py-1 text-xs sm:text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33] w-full sm:w-auto"
           >
             Edit
           </button>
@@ -91,7 +97,7 @@ function VariantPage() {
             title="Are you sure?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+            <button className="px-3 py-1 text-xs sm:text-sm rounded bg-red-600 text-white hover:bg-red-700 w-full sm:w-auto">
               Delete
             </button>
           </Popconfirm>
@@ -101,11 +107,17 @@ function VariantPage() {
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Variants</h2>
+    <div className="w-full min-w-0 px-2 sm:px-4 py-3">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">
+          Variants
+        </h2>
+
         <Button
           type="primary"
+          className="w-full sm:w-auto"
           onClick={() => {
             setEditingVariant(null);
             setOpenModal(true);
@@ -114,20 +126,31 @@ function VariantPage() {
           Add Variant
         </Button>
       </div>
-      <Table
-        rowKey="_id"
-        columns={columns}
-        dataSource={variants}
-        loading={variantsLoading}
-        bordered
-        className="erp-table"
-      />
-     
+
+      {/* Table Wrapper */}
+      <div className="w-full min-w-0 overflow-x-auto">
+        <Table
+          rowKey="_id"
+          columns={columns}
+          dataSource={variants}
+          loading={variantsLoading}
+          bordered
+          size="small"
+          pagination={{ pageSize: 8, size: "small" }}
+          scroll={{ x: 600 }}
+          className="erp-table"
+        />
+      </div>
+
+      {/* Modal */}
       <Modal
         open={openModal}
         title={editingVariant ? "Edit Variant" : "Create Variant"}
         onCancel={closeModal}
         onOk={() => form.submit()}
+        width="95%"
+        style={{ maxWidth: 500 }}
+        destroyOnClose
       >
         <Form layout="vertical" form={form} onFinish={handleSave}>
           <Form.Item
@@ -144,7 +167,7 @@ function VariantPage() {
             rules={[{ required: true, message: "Please select a product" }]}
           >
             <Select placeholder="Select Product">
-              {products?.map((prod: any) => (
+              {products.map((prod: any) => (
                 <Select.Option key={prod._id} value={prod._id}>
                   {prod.name}
                 </Select.Option>
@@ -153,7 +176,7 @@ function VariantPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 }
 

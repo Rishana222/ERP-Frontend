@@ -17,7 +17,10 @@ import {
   useCreateVendorPayment,
   useGetVendorPayments,
 } from "../Utils/VendorpaymentAPI";
-import type { VendorPaymentPayload, VendorPayment } from "../Utils/VendorpaymentAPI";
+import type {
+  VendorPaymentPayload,
+  VendorPayment,
+} from "../Utils/VendorpaymentAPI";
 
 const { Option } = Select;
 
@@ -26,15 +29,11 @@ const VendorPayments = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  // Get vendors
   const { data: vendors = [] } = useGetVendors();
-
-  // Get payments for selected vendor
   const { data: paymentsData = [], refetch } = useGetVendorPayments(
     selectedVendor || ""
   );
 
-  // Create payment mutation
   const { mutate: addPayment, isLoading } = useCreateVendorPayment();
 
   const openModal = (vendorId: string) => {
@@ -63,7 +62,9 @@ const VendorPayments = () => {
           refetch();
         },
         onError: (err: any) => {
-          message.error(err.response?.data?.message || "Failed to add payment");
+          message.error(
+            err.response?.data?.message || "Failed to add payment"
+          );
         },
       });
     } catch (err) {
@@ -71,14 +72,30 @@ const VendorPayments = () => {
     }
   };
 
-  // Vendor table columns
+  /* ================= RESPONSIVE VENDOR TABLE ================= */
+
   const vendorColumns = [
-    { title: "Name", dataIndex: "name" },
-    { title: "Phone", dataIndex: "phone" },
-    { title: "Email", dataIndex: "email" },
-    { title: "GST", dataIndex: "gstNumber" },
     {
-      title: "Paid Amount",
+      title: "Name",
+      dataIndex: "name",
+    },
+    {
+      title: "Phone",
+      dataIndex: "phone",
+      responsive: ["md"],
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      responsive: ["lg"],
+    },
+    {
+      title: "GST",
+      dataIndex: "gstNumber",
+      responsive: ["lg"],
+    },
+    {
+      title: "Paid",
       render: (_: any, record: any) => {
         const totalPaid =
           paymentsData
@@ -90,14 +107,19 @@ const VendorPayments = () => {
     {
       title: "Action",
       render: (_: any, record: any) => (
-        <Button type="primary" onClick={() => openModal(record._id)}>
-          Add Payment
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => openModal(record._id)}
+        >
+          Add
         </Button>
       ),
     },
   ];
 
-  // Payment table columns
+  /* ================= RESPONSIVE PAYMENT TABLE ================= */
+
   const paymentColumns = [
     {
       title: "Date",
@@ -109,59 +131,81 @@ const VendorPayments = () => {
       dataIndex: "amount",
       render: (amt: number) => `₹${amt}`,
     },
-    { title: "Mode", dataIndex: "paymentMode" },
-    { title: "Note", dataIndex: "note" },
+    {
+      title: "Mode",
+      dataIndex: "paymentMode",
+      responsive: ["md"],
+    },
+    {
+      title: "Note",
+      dataIndex: "note",
+      responsive: ["lg"],
+    },
   ];
 
-  // Get remaining vendor balance
   const getRemainingBalance = () => {
     if (!selectedVendor) return 0;
     const vendor = vendors.find((v) => v._id === selectedVendor);
     if (!vendor) return 0;
+
     const totalPaid =
       paymentsData
         .filter((p) => p.vendor === selectedVendor)
         .reduce((sum, p) => sum + p.amount, 0) || 0;
+
     return vendor.balance - totalPaid;
   };
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold">Vendor Payments</h2>
+    <div className="w-full overflow-x-hidden">
+      <h2 className="text-lg sm:text-xl font-semibold mb-4">
+        Vendor Payments
+      </h2>
 
-      <Table
-        rowKey="_id"
-        dataSource={vendors}
-        columns={vendorColumns}
-        bordered
-        className="erp-table"
-        pagination={false}
-        style={{ marginBottom: 20 }}
-      />
+      {/* Vendor Table */}
+      <div className="w-full overflow-x-auto">
+        <Table
+          rowKey="_id"
+          dataSource={vendors}
+          columns={vendorColumns}
+          bordered
+          pagination={false}
+          scroll={{ x: 600 }}
+          className="erp-table"
+        />
+      </div>
 
+      {/* Payments Table */}
       {selectedVendor && (
-        <>
-          <h3 style={{ marginTop: 20 }} className="text-xl font-semibold">
-            Payments for {vendors.find((v) => v._id === selectedVendor)?.name}
+        <div className="mt-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3">
+            Payments for{" "}
+            {vendors.find((v) => v._id === selectedVendor)?.name}
           </h3>
 
-          <Table
-            rowKey="_id"
-            dataSource={paymentsData}
-            columns={paymentColumns}
-            bordered
-            className="erp-table"
-            pagination={false}
-          />
-        </>
+          <div className="w-full overflow-x-auto">
+            <Table
+              rowKey="_id"
+              dataSource={paymentsData}
+              columns={paymentColumns}
+              bordered
+              pagination={false}
+              scroll={{ x: 500 }}
+              className="erp-table"
+            />
+          </div>
+        </div>
       )}
 
+      {/* Modal */}
       <Modal
         title="Add Vendor Payment"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={handleSave}
         confirmLoading={isLoading}
+        width="100%"
+        style={{ maxWidth: 500 }}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -191,7 +235,7 @@ const VendorPayments = () => {
             rules={[{ required: true }]}
             initialValue={moment()}
           >
-            <DatePicker style={{ width: "100%" }} />
+            <DatePicker className="w-full" />
           </Form.Item>
 
           <Form.Item
@@ -199,9 +243,13 @@ const VendorPayments = () => {
             name="account"
             rules={[{ required: true, message: "Account is required" }]}
           >
-            <Select placeholder="Select account">
-              <Option value="69a3fd27889e8eb025fe3752">Cash Account</Option>
-              <Option value="69a3fd2e889e8eb025fe3755">Bank Account</Option>
+            <Select placeholder="Select account" className="w-full">
+              <Option value="69a3fd27889e8eb025fe3752">
+                Cash Account
+              </Option>
+              <Option value="69a3fd2e889e8eb025fe3755">
+                Bank Account
+              </Option>
             </Select>
           </Form.Item>
 

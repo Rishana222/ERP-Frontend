@@ -1,13 +1,22 @@
 import React, { useState } from "react";
-import { Table, Modal, Form, Input, InputNumber, Popconfirm, message } from "antd";
+import {
+  Table,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Popconfirm,
+  message,
+} from "antd";
 import {
   useGetUnits,
   useCreateUnit,
   useUpdateUnit,
   useDeleteUnit,
-
 } from "../Utils/UnitAPI";
 import type { Unit, UnitPayload } from "../Utils/UnitAPI";
+import type { ColumnsType } from "antd/es/table";
+
 const UnitsPage: React.FC = () => {
   const { data: units = [], isLoading } = useGetUnits();
   const createMutation = useCreateUnit();
@@ -49,7 +58,9 @@ const UnitsPage: React.FC = () => {
       setOpen(false);
       form.resetFields();
     } catch (err: any) {
-      message.error(err?.response?.data?.message || "Something went wrong");
+      message.error(
+        err?.response?.data?.message || "Something went wrong"
+      );
     }
   };
 
@@ -62,17 +73,37 @@ const UnitsPage: React.FC = () => {
     }
   };
 
-  const columns = [
-    { title: "Name", dataIndex: "name" },
-    { title: "Short Name", dataIndex: "shortName" },
-    { title: "Base Unit", dataIndex: "baseUnit" },
-    { title: "Base Value", dataIndex: "baseValue" },
+  const columns: ColumnsType<Unit> = [
+    {
+      title: "Name",
+      dataIndex: "name",
+      ellipsis: true,
+      width: 150,
+    },
+    {
+      title: "Short",
+      dataIndex: "shortName",
+      ellipsis: true,
+      width: 120,
+    },
+    {
+      title: "Base Unit",
+      dataIndex: "baseUnit",
+      ellipsis: true,
+      width: 150,
+    },
+    {
+      title: "Base Value",
+      dataIndex: "baseValue",
+      width: 120,
+    },
     {
       title: "Actions",
+      width: 160,
       render: (_: any, record: Unit) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
+            className="px-3 py-1 text-xs sm:text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33] w-full sm:w-auto"
             onClick={() => openModal(record)}
           >
             Edit
@@ -82,7 +113,7 @@ const UnitsPage: React.FC = () => {
             title="Delete this unit?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+            <button className="px-3 py-1 text-xs sm:text-sm rounded bg-red-600 text-white hover:bg-red-700 w-full sm:w-auto">
               Delete
             </button>
           </Popconfirm>
@@ -92,33 +123,56 @@ const UnitsPage: React.FC = () => {
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Units</h2>
+    <div className="w-full min-w-0 px-2 sm:px-4 py-3">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">
+          Units
+        </h2>
+
         <button
-          className="px-4 py-2 bg-[#00264d] text-white rounded"
+          className="px-4 py-2 bg-[#00264d] text-white rounded w-full sm:w-auto"
           onClick={() => openModal()}
         >
           Add Unit
         </button>
       </div>
 
-      <Table
-        dataSource={units}
-        columns={columns}
-        rowKey="_id"
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      {/* Table Wrapper */}
+      <div className="w-full min-w-0 overflow-x-auto">
+        <Table
+          dataSource={units}
+          columns={columns}
+          rowKey="_id"
+          loading={isLoading}
+          bordered
+          size="small"
+          pagination={{ pageSize: 8, size: "small" }}
+          scroll={{ x: 800 }}
+          className="erp-table"
+        />
+      </div>
 
+      {/* Modal */}
       <Modal
         title={editingUnit ? "Edit Unit" : "Add Unit"}
         open={open}
-        onCancel={() => setOpen(false)}
+        onCancel={() => {
+          setOpen(false);
+          setEditingUnit(null);
+          form.resetFields();
+        }}
         onOk={() => form.submit()}
+        width="95%"
+        style={{ maxWidth: 500 }}
+        destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+        >
           <Form.Item
             label="Name"
             name="name"
@@ -136,7 +190,10 @@ const UnitsPage: React.FC = () => {
           </Form.Item>
 
           <Form.Item label="Base Value" name="baseValue">
-            <InputNumber style={{ width: "100%" }} min={0} />
+            <InputNumber
+              style={{ width: "100%" }}
+              min={0}
+            />
           </Form.Item>
         </Form>
       </Modal>

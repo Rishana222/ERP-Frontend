@@ -27,11 +27,15 @@ const App = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const { user } = useSelector((state: RootState) => state.auth);
-
+  // 1. Get Theme Tokens (Fixes the ReferenceError)
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  // 2. Consistent Width Calculation
+  const siderWidth = collapsed ? 80 : 200;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -56,34 +60,32 @@ const App = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
+      {/* Sidebar - Fixed Position */}
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
+        collapsedWidth={80}
         breakpoint="lg"
-        collapsedWidth={0}
-        onBreakpoint={(broken) => {
-          setCollapsed(broken);
-        }}
+        onBreakpoint={(broken) => setCollapsed(broken)}
         style={{
+          overflow: "auto",
           height: "100vh",
           position: "fixed",
           left: 0,
           top: 0,
           bottom: 0,
-          overflow: "auto",
+          zIndex: 100,
         }}
       >
         <div
           style={{
             height: 64,
-            color: "white",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            fontWeight: "bold",
-            gap: "10px",
+            padding: "10px",
           }}
           onClick={() => navigate("/")}
         >
@@ -184,34 +186,42 @@ const App = () => {
         />
       </Sider>
 
+      {/* Main Container - Offsets the Fixed Sidebar */}
       <Layout
         style={{
-          marginLeft: collapsed ? 0 : 200,
-          transition: "all 0.2s",
+          marginLeft: siderWidth,
+          transition: "margin-left 0.2s",
+          background: "#f5f5f5",
         }}
       >
         <Header
           style={{
-            padding: "0 24px 0 0",
+            padding: "0 24px",
             background: colorBgContainer,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+            boxShadow: "0 1px 4px rgba(0,21,41,.08)",
           }}
         >
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: 16, width: 64, height: 64 }}
+            style={{ fontSize: 32, width: 64, height: 64 }}
           />
 
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+          <Dropdown
+            menu={{ items: userMenuItems }}
+            placement="bottomRight"
+            arrow
+          >
             <Space style={{ cursor: "pointer", padding: "0 8px" }}>
               <Avatar icon={<UserOutlined />} />
-              <span style={{ fontWeight: 500 }}>
-                {user?.name || "Admin"}
-              </span>
+              <span style={{ fontWeight: 500 }}>{user?.name || "Admin"}</span>
             </Space>
           </Dropdown>
         </Header>
@@ -220,7 +230,7 @@ const App = () => {
           style={{
             margin: "24px 16px",
             padding: 24,
-            minHeight: 280,
+            minHeight: "calc(100vh - 112px)",
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}

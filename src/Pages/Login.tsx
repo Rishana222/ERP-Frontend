@@ -121,7 +121,7 @@ const Login: React.FC = () => {
                   Logging in...
                 </>
               ) : (
-                "Login to Dashboard"
+                "Login "
               )}
             </button>
           </form>

@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Table, Button, Modal, Form, Input, InputNumber, Popconfirm, message } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Popconfirm,
+  message,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   useGetTaxes,
@@ -8,6 +17,7 @@ import {
   useDeleteTax,
 } from "../Utils/TaxAPI";
 import type { Tax, TaxPayload } from "../Utils/TaxAPI";
+
 const TaxPage = () => {
   const { data: taxes = [], isLoading } = useGetTaxes();
   const createTax = useCreateTax();
@@ -18,13 +28,15 @@ const TaxPage = () => {
   const [editingTax, setEditingTax] = useState<Tax | null>(null);
   const [form] = Form.useForm();
 
-
   const handleSubmit = async () => {
     try {
       const values: TaxPayload = await form.validateFields();
 
       if (editingTax) {
-        await updateTax.mutateAsync({ id: editingTax._id, data: values });
+        await updateTax.mutateAsync({
+          id: editingTax._id,
+          data: values,
+        });
         message.success("Tax updated successfully");
       } else {
         await createTax.mutateAsync(values);
@@ -34,11 +46,10 @@ const TaxPage = () => {
       form.resetFields();
       setEditingTax(null);
       setOpen(false);
-    } catch (error) {
+    } catch {
       message.error("Something went wrong");
     }
   };
-
 
   const handleEdit = (record: Tax) => {
     setEditingTax(record);
@@ -59,19 +70,21 @@ const TaxPage = () => {
     {
       title: "Tax Name",
       dataIndex: "name",
+      ellipsis: true,
     },
     {
       title: "Percentage",
       dataIndex: "percentage",
+      width: 120,
       render: (value: number) => `${value}%`,
     },
     {
       title: "Actions",
-      key: "action",
+      width: 160,
       render: (_: any, record: Tax) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33]"
+            className="px-3 py-1 text-xs sm:text-sm rounded bg-[#00264d] text-white hover:bg-[#001a33] w-full sm:w-auto"
             onClick={() => handleEdit(record)}
           >
             Edit
@@ -81,22 +94,25 @@ const TaxPage = () => {
             title="Are you sure?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">
+            <button className="px-3 py-1 text-xs sm:text-sm rounded bg-red-600 text-white hover:bg-red-700 w-full sm:w-auto">
               Delete
             </button>
           </Popconfirm>
         </div>
       ),
-    }
+    },
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Taxes</h2>
+    <div className="w-full min-w-0 px-2 sm:px-4 py-3">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">Taxes</h2>
 
         <Button
           type="primary"
+          className="w-full sm:w-auto"
           onClick={() => {
             setOpen(true);
             setEditingTax(null);
@@ -106,16 +122,22 @@ const TaxPage = () => {
         </Button>
       </div>
 
+      {/* Table Wrapper */}
+      <div className="w-full min-w-0 overflow-x-auto">
+        <Table
+          columns={columns}
+          dataSource={taxes}
+          rowKey="_id"
+          loading={isLoading}
+          bordered
+          size="small"
+          pagination={{ pageSize: 8, size: "small" }}
+          scroll={{ x: 500 }}
+          className="erp-table"
+        />
+      </div>
 
-      <Table
-        columns={columns}
-        dataSource={taxes}
-        rowKey="_id"
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
-
+      {/* Modal */}
       <Modal
         title={editingTax ? "Edit Tax" : "Add Tax"}
         open={open}
@@ -125,6 +147,9 @@ const TaxPage = () => {
           setEditingTax(null);
           form.resetFields();
         }}
+        width="95%"
+        style={{ maxWidth: 500 }}
+        destroyOnClose
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -149,7 +174,7 @@ const TaxPage = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 

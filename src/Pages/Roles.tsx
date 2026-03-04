@@ -19,7 +19,7 @@ import {
   useDeleteRole,
 } from "../Utils/RoleAPI";
 import type { Role, RolePayload } from "../Utils/RoleAPI";
-import { useGetPermissions } from "../Utils/permissionsApi"
+import { useGetPermissions } from "../Utils/permissionsApi";
 
 interface Permission {
   _id: string;
@@ -31,19 +31,12 @@ const RolePage = () => {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [form] = Form.useForm();
 
-
-
   const { data: roles = [], isLoading } = useGetRoles();
-
   const { data: permissions = [] } = useGetPermissions();
-
-
 
   const createRole = useCreateRole();
   const updateRole = useUpdateRole();
   const deleteRole = useDeleteRole();
-
-
 
   const handleSubmit = async (values: RolePayload) => {
     try {
@@ -81,36 +74,33 @@ const RolePage = () => {
     message.success("Role deleted");
   };
 
-
-
   const columns: ColumnsType<Role> = [
     {
       title: "Role Name",
       dataIndex: "name",
     },
     {
-  title: "Permissions",
-  render: (_, record) => {
-    if (!record.permissions || record.permissions.length === 0)
-      return "No Permissions";
+      title: "Permissions",
+      render: (_, record) => {
+        if (!record.permissions || record.permissions.length === 0)
+          return "No Permissions";
 
-    return (
-      <div className="flex flex-wrap gap-2">
-        {record.permissions.map((perm: any) => (
-          <Tag key={perm._id}>{perm.name}</Tag>
-        ))}
-      </div>
-    );
-  },
-},
-
+        return (
+          <div className="flex flex-wrap gap-2">
+            {record.permissions.map((perm: any) => (
+              <Tag key={perm._id}>{perm.name}</Tag>
+            ))}
+          </div>
+        );
+      },
+    },
     {
       title: "Actions",
       render: (_, record) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => handleEdit(record)}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white"
+            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white w-full sm:w-auto"
           >
             Edit
           </button>
@@ -119,7 +109,7 @@ const RolePage = () => {
             title="Are you sure?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
+            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white w-full sm:w-auto">
               Delete
             </button>
           </Popconfirm>
@@ -128,11 +118,10 @@ const RolePage = () => {
     },
   ];
 
-
-
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
+      {/* Responsive Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-xl font-semibold">Roles</h2>
         <Button
           type="primary"
@@ -145,6 +134,7 @@ const RolePage = () => {
         </Button>
       </div>
 
+      {/* Responsive Table */}
       <Table
         columns={columns}
         dataSource={roles}
@@ -152,8 +142,10 @@ const RolePage = () => {
         loading={isLoading}
         bordered
         className="erp-table"
+        scroll={{ x: "max-content" }}
       />
 
+      {/* Responsive Modal */}
       <Modal
         title={editingRole ? "Edit Role" : "Add Role"}
         open={open}
@@ -162,9 +154,9 @@ const RolePage = () => {
           form.resetFields();
         }}
         onOk={() => form.submit()}
-        confirmLoading={
-          createRole.isPending || updateRole.isPending
-        }
+        confirmLoading={createRole.isPending || updateRole.isPending}
+        width="95%"
+        style={{ maxWidth: 600 }}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item

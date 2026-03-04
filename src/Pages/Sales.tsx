@@ -77,16 +77,11 @@ const SalesPage: React.FC = () => {
     }
   };
 
-  // 🔥 AUTO UNIT SET FUNCTION
   const handleProductChange = (productId: string, index: number) => {
-    const selectedProduct = products.find(
-      (p: any) => p._id === productId
-    );
-
+    const selectedProduct = products.find((p: any) => p._id === productId);
     if (!selectedProduct) return;
 
     const items = form.getFieldValue("items") || [];
-
     items[index] = {
       ...items[index],
       unit:
@@ -165,7 +160,7 @@ const SalesPage: React.FC = () => {
           title="Are you sure?"
           onConfirm={() => handleDelete(record.fullSale._id)}
         >
-          <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
+          <button className="px-3 py-1 text-sm rounded bg-red-600 text-white w-full sm:w-auto">
             Delete
           </button>
         </Popconfirm>
@@ -175,16 +170,18 @@ const SalesPage: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-between mb-4">
+      {/* Responsive Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-xl font-semibold">Sales</h2>
         <button
           onClick={() => openModal()}
-          className="px-4 py-2 rounded bg-[#00264d] text-white"
+          className="px-4 py-2 rounded bg-[#00264d] text-white w-full sm:w-auto"
         >
           Add Sale
         </button>
       </div>
 
+      {/* Responsive Table */}
       <Table
         rowKey="key"
         loading={isLoading}
@@ -192,13 +189,16 @@ const SalesPage: React.FC = () => {
         columns={columns}
         bordered
         className="erp-table"
+        scroll={{ x: "max-content" }}
       />
 
+      {/* Responsive Modal */}
       <Modal
         open={modalVisible}
         title={editingSale ? "Edit Sale" : "Add Sale"}
         footer={null}
-        width={900}
+        width="95%"
+        style={{ maxWidth: 1000 }}
         onCancel={() => {
           setModalVisible(false);
           form.resetFields();
@@ -224,7 +224,7 @@ const SalesPage: React.FC = () => {
               <>
                 {fields.map(({ name }) => (
                   <div key={name} className="border p-4 mb-3 rounded">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Form.Item
                         name={[name, "product"]}
                         label="Product"
@@ -241,7 +241,6 @@ const SalesPage: React.FC = () => {
                         />
                       </Form.Item>
 
-                     
                       <Form.Item
                         name={[name, "unit"]}
                         label="Unit"
@@ -301,7 +300,7 @@ const SalesPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => add()}
-                  className="px-4 py-1.5 bg-[#00264d] text-white rounded"
+                  className="px-4 py-1.5 bg-[#00264d] text-white rounded w-full sm:w-auto"
                 >
                   Add Item
                 </button>
@@ -313,7 +312,7 @@ const SalesPage: React.FC = () => {
             <InputNumber className="w-full" disabled />
           </Form.Item>
 
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6">
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 border-t pt-4 mt-6">
             <button
               type="button"
               onClick={() => {
@@ -321,14 +320,14 @@ const SalesPage: React.FC = () => {
                 form.resetFields();
                 setEditingSale(null);
               }}
-              className="px-5 py-2 border border-[#00264d] text-[#00264d] rounded"
+              className="px-5 py-2 border border-[#00264d] text-[#00264d] rounded w-full sm:w-auto"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="px-6 py-2 bg-[#00264d] text-white rounded"
+              className="px-6 py-2 bg-[#00264d] text-white rounded w-full sm:w-auto"
             >
               {editingSale ? "Update Sale" : "Save Sale"}
             </button>

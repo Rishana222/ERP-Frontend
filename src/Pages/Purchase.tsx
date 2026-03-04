@@ -33,7 +33,8 @@ const PurchasePage: React.FC = () => {
   const deleteMutation = useDeletePurchase();
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
+  const [editingPurchase, setEditingPurchase] =
+    useState<Purchase | null>(null);
   const [form] = Form.useForm();
 
   const openModal = (purchase?: Purchase) => {
@@ -65,7 +66,7 @@ const PurchasePage: React.FC = () => {
 
       const grandTotal = items.reduce(
         (sum: number, item: any) => sum + item.total,
-        0,
+        0
       );
 
       const payload: PurchasePayload = {
@@ -87,8 +88,7 @@ const PurchasePage: React.FC = () => {
 
       setModalVisible(false);
       form.resetFields();
-    } catch (err) {
-      console.error(err);
+    } catch {
       message.error("Error saving purchase");
     }
   };
@@ -110,56 +110,53 @@ const PurchasePage: React.FC = () => {
         (item: any) =>
           `${item.product?.name || "-"} (${item.quantity} ${
             item.unit?.name || "pcs"
-          })`,
+          })`
       )
       .join(", "),
-    costPriceSummary: purchase.items
-      .map((item: any) => item.costPrice ?? 0)
-      .join(", "),
-    sellingPriceSummary: purchase.items
-      .map((item: any) => item.sellingPrice ?? 0)
-      .join(", "),
     lineTotal: purchase.items.reduce(
-      (sum: number, item: any) => sum + (item.quantity * item.costPrice || 0),
-      0,
+      (sum: number, item: any) =>
+        sum + (item.quantity * item.costPrice || 0),
+      0
     ),
     fullPurchase: purchase,
   }));
 
   const columns = [
-    { title: "Vendor", dataIndex: "vendorName" },
-    { title: "Products", dataIndex: "productSummary" },
     {
-      title: "Cost Price",
-      dataIndex: "costPriceSummary",
-      render: (val: any) => `₹${val}`,
+      title: "Vendor",
+      dataIndex: "vendorName",
+      responsive: ["xs", "sm", "md", "lg"],
     },
     {
-      title: "Selling Price",
-      dataIndex: "sellingPriceSummary",
-      render: (val: any) => `₹${val}`,
+      title: "Products",
+      dataIndex: "productSummary",
+      responsive: ["sm", "md", "lg"],
     },
     {
       title: "Line Total",
       dataIndex: "lineTotal",
       render: (val: number) => `₹${val}`,
+      responsive: ["xs", "sm", "md", "lg"],
     },
     {
       title: "Actions",
+      responsive: ["xs", "sm", "md", "lg"],
       render: (_: any, record: any) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => openModal(record.fullPurchase)}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] hover:bg-[#001a33] text-white"
+            className="px-3 py-1 text-xs sm:text-sm rounded bg-[#00264d] text-white w-full sm:w-auto"
           >
             Edit
           </button>
 
           <Popconfirm
             title="Are you sure?"
-            onConfirm={() => handleDelete(record.fullPurchase._id)}
+            onConfirm={() =>
+              handleDelete(record.fullPurchase._id)
+            }
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 hover:bg-red-700 text-white">
+            <button className="px-3 py-1 text-xs sm:text-sm rounded bg-red-600 text-white w-full sm:w-auto">
               Delete
             </button>
           </Popconfirm>
@@ -169,35 +166,64 @@ const PurchasePage: React.FC = () => {
   ];
 
   return (
-    <>
-      <div className="flex justify-between mb-4">
-        <h2 className="text-xl font-semibold">Purchases</h2>
-        <Button type="primary" onClick={() => openModal()}>
+    <div className="p-3 sm:p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">
+          Purchases
+        </h2>
+        <Button
+          type="primary"
+          className="w-full sm:w-auto"
+          onClick={() => openModal()}
+        >
           Add Purchase
         </Button>
       </div>
 
-      <Table
-        dataSource={dataSource}
-        columns={columns}
-        rowKey={(record) => record.key}
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <Table
+          dataSource={dataSource}
+          columns={columns}
+          rowKey="key"
+          loading={isLoading}
+          bordered
+          pagination={{ pageSize: 6 }}
+          className="min-w-[800px] erp-table"
+        />
+      </div>
 
+      {/* Modal */}
       <Modal
-        title={editingPurchase ? "Edit Purchase" : "Add Purchase"}
+        title={
+          editingPurchase ? "Edit Purchase" : "Add Purchase"
+        }
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
-        width={900}
+        width={window.innerWidth < 640 ? "95%" : 1000}
+        centered
       >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Form.Item label="Vendor" name="vendor" rules={[{ required: true }]}>
-            <Select placeholder="Select Vendor">
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSave}
+        >
+          <Form.Item
+            label="Vendor"
+            name="vendor"
+            rules={[{ required: true }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select Vendor"
+            >
               {vendors.map((v: any) => (
-                <Select.Option key={v._id} value={v._id}>
+                <Select.Option
+                  key={v._id}
+                  value={v._id}
+                >
                   {v.name}
                 </Select.Option>
               ))}
@@ -207,89 +233,112 @@ const PurchasePage: React.FC = () => {
           <Form.List name="items">
             {(fields, { add, remove }) => (
               <>
-                {fields.map(({ key, name, ...restField }) => (
-                  <div key={key} className="grid grid-cols-6 gap-2 mb-3">
-                    <Form.Item
-                      {...restField}
-                      name={[name, "product"]}
-                      rules={[{ required: true }]}
+                {fields.map(
+                  ({ key, name, ...restField }) => (
+                    <div
+                      key={key}
+                      className="border rounded-lg p-3 mb-3 bg-gray-50"
                     >
-                      <Select placeholder="Product">
-                        {products.map((p: any) => (
-                          <Select.Option key={p._id} value={p._id}>
-                            {p.name}
-                          </Select.Option>
-                        ))}
-                      </Select>
-                    </Form.Item>
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                        <Form.Item
+                          {...restField}
+                          name={[name, "product"]}
+                          rules={[{ required: true }]}
+                        >
+                          <Select placeholder="Product">
+                            {products.map((p: any) => (
+                              <Select.Option
+                                key={p._id}
+                                value={p._id}
+                              >
+                                {p.name}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
 
-                    <Form.Item
-                      {...restField}
-                      name={[name, "unit"]}
-                      rules={[{ required: true }]}
-                    >
-                      <Select placeholder="Unit">
-                        {units.map((u: any) => (
-                          <Select.Option key={u._id} value={u._id}>
-                            {u.name}
-                          </Select.Option>
-                        ))}
-                      </Select>
-                    </Form.Item>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "unit"]}
+                          rules={[{ required: true }]}
+                        >
+                          <Select placeholder="Unit">
+                            {units.map((u: any) => (
+                              <Select.Option
+                                key={u._id}
+                                value={u._id}
+                              >
+                                {u.name}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
 
-                    <Form.Item
-                      {...restField}
-                      name={[name, "quantity"]}
-                      rules={[{ required: true }]}
-                    >
-                      <InputNumber
-                        style={{ width: "100%" }}
-                        placeholder="Qty"
-                      />
-                    </Form.Item>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "quantity"]}
+                          rules={[{ required: true }]}
+                        >
+                          <InputNumber
+                            style={{ width: "100%" }}
+                            placeholder="Qty"
+                            min={1}
+                          />
+                        </Form.Item>
 
-                    <Form.Item
-                      {...restField}
-                      name={[name, "costPrice"]}
-                      rules={[{ required: true }]}
-                    >
-                      <InputNumber
-                        style={{ width: "100%" }}
-                        placeholder="Cost Price"
-                      />
-                    </Form.Item>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "costPrice"]}
+                          rules={[{ required: true }]}
+                        >
+                          <InputNumber
+                            style={{ width: "100%" }}
+                            placeholder="Cost"
+                            min={0}
+                          />
+                        </Form.Item>
 
-                    <Form.Item
-                      {...restField}
-                      name={[name, "sellingPrice"]}
-                      rules={[{ required: true }]}
-                    >
-                      <InputNumber
-                        style={{ width: "100%" }}
-                        placeholder="Selling Price"
-                      />
-                    </Form.Item>
+                        <Form.Item
+                          {...restField}
+                          name={[name, "sellingPrice"]}
+                          rules={[{ required: true }]}
+                        >
+                          <InputNumber
+                            style={{ width: "100%" }}
+                            placeholder="Selling"
+                            min={0}
+                          />
+                        </Form.Item>
 
-                    <Button danger onClick={() => remove(name)}>
-                      Remove
-                    </Button>
-                  </div>
-                ))}
+                        <div className="flex items-end">
+                          <Button
+                            danger
+                            block
+                            onClick={() =>
+                              remove(name)
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
 
-         
-                <button
-                  type="button"
+                <Button
+                  type="dashed"
+                  block
                   onClick={() => add()}
-                  className="px-4 py-1.5 bg-[#00264d] text-white rounded"
                 >
-                  Add Item
-                </button>
+                  + Add Item
+                </Button>
               </>
             )}
           </Form.List>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 

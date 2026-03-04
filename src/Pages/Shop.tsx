@@ -22,7 +22,6 @@ const ShopPage = () => {
   const [editingShop, setEditingShop] = useState<Shop | null>(null);
   const [form] = Form.useForm();
 
-
   const handleSubmit = async (values: ShopPayload) => {
     try {
       if (editingShop) {
@@ -41,11 +40,10 @@ const ShopPage = () => {
       setOpen(false);
       setEditingShop(null);
       form.resetFields();
-    } catch (error) {
+    } catch {
       message.error("Something went wrong");
     }
   };
-
 
   const handleDelete = async (id: string) => {
     try {
@@ -57,59 +55,61 @@ const ShopPage = () => {
     }
   };
 
-
   const columns: ColumnsType<Shop> = [
     {
       title: "Shop Name",
       dataIndex: "name",
+      responsive: ["xs", "sm", "md", "lg"],
     },
     {
       title: "Phone",
       dataIndex: "phone",
+      responsive: ["sm", "md", "lg"],
     },
     {
       title: "Address",
       dataIndex: "address",
+      responsive: ["md", "lg"],
+      ellipsis: true,
     },
     {
-  title: "Actions",
-  render: (_, record) => (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={() => {
-          setEditingShop(record); 
-          setOpen(true);          
-          form.setFieldsValue(record); 
-        }}
-        className="px-4 py-1.5 text-sm font-medium rounded bg-[#00264d] text-white hover:bg-opacity-90 transition-all"
-      >
-        Edit
-      </button>
+      title: "Actions",
+      fixed: "right",
+      render: (_, record) => (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={() => {
+              setEditingShop(record);
+              setOpen(true);
+              form.setFieldsValue(record);
+            }}
+            className="w-full sm:w-auto px-4 py-1.5 text-sm font-medium rounded bg-[#00264d] text-white hover:bg-opacity-90 transition-all"
+          >
+            Edit
+          </button>
 
-      <Popconfirm
-        title="Are you sure?"
-        onConfirm={() => handleDelete(record._id)}
-        okText="Yes"
-        cancelText="No"
-      >
-        <button 
-          className="px-4 py-1.5 text-sm font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-all"
-        >
-          Delete
-        </button>
-      </Popconfirm>
-    </div>
-  ),
-},
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() => handleDelete(record._id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <button className="w-full sm:w-auto px-4 py-1.5 text-sm font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-all">
+              Delete
+            </button>
+          </Popconfirm>
+        </div>
+      ),
+    },
   ];
 
-
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Shops</h2>
+    <div className="p-3 sm:p-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">Shops</h2>
         <Button
           type="primary"
+          className="w-full sm:w-auto"
           onClick={() => {
             setEditingShop(null);
             setOpen(true);
@@ -120,14 +120,18 @@ const ShopPage = () => {
         </Button>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={shops}
-        rowKey="_id"
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      <div className="overflow-x-auto">
+        <Table
+          columns={columns}
+          dataSource={shops}
+          rowKey="_id"
+          loading={isLoading}
+          bordered
+          scroll={{ x: "max-content" }}
+          pagination={{ pageSize: 10, responsive: true }}
+          className="erp-table"
+        />
+      </div>
 
       <Modal
         title={editingShop ? "Edit Shop" : "Add Shop"}
@@ -135,6 +139,8 @@ const ShopPage = () => {
         onCancel={() => setOpen(false)}
         footer={null}
         destroyOnClose
+        width="100%"
+        style={{ maxWidth: 500 }}
       >
         <Form layout="vertical" form={form} onFinish={handleSubmit}>
           <Form.Item

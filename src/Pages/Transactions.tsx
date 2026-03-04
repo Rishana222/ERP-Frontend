@@ -1,7 +1,7 @@
 import React from "react";
 import { Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useGetTransactions } from "../Utils/TransactionApi";
-
 
 interface TransactionEntry {
   account: string;
@@ -23,40 +23,73 @@ interface Transaction {
 const TransactionsPage: React.FC = () => {
   const { data: transactions = [], isLoading } = useGetTransactions();
 
-  const columns = [
-    { title: "Description", dataIndex: "description" },
-    { title: "Reference Type", dataIndex: "referenceType" },
+  const columns: ColumnsType<Transaction> = [
+    {
+      title: "Description",
+      dataIndex: "description",
+      ellipsis: true,
+      width: 180,
+    },
+    {
+      title: "Reference",
+      dataIndex: "referenceType",
+      ellipsis: true,
+      width: 130,
+    },
     {
       title: "Entries",
-      render: (_: any, record: Transaction) =>
-        record.entries
-          .map((e) => `${e.account}: D${e.debit}/C${e.credit}`)
-          .join(", "),
+      width: 250,
+      render: (_: any, record: Transaction) => (
+        <div className="whitespace-normal break-words text-xs sm:text-sm">
+          {record.entries
+            .map(
+              (e) =>
+                `${e.account}: D${e.debit}/C${e.credit}`
+            )
+            .join(", ")}
+        </div>
+      ),
     },
     {
       title: "Date",
       dataIndex: "date",
-      render: (val: string) => new Date(val).toLocaleString(),
+      width: 160,
+      render: (val: string) =>
+        new Date(val).toLocaleString(),
     },
     {
-      title: "Created At",
+      title: "Created",
       dataIndex: "createdAt",
-      render: (val: string) => new Date(val).toLocaleString(),
+      width: 160,
+      render: (val: string) =>
+        new Date(val).toLocaleString(),
     },
   ];
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Transactions</h2>
+    <div className="w-full min-w-0 px-2 sm:px-4 py-3">
+      
+      {/* Header */}
+      <div className="mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">
+          Transactions
+        </h2>
+      </div>
 
-      <Table<Transaction>
-        rowKey="_id"
-        dataSource={transactions}
-        columns={columns}
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      {/* Table Wrapper (Important for 320px) */}
+      <div className="w-full min-w-0 overflow-x-auto">
+        <Table<Transaction>
+          rowKey="_id"
+          dataSource={transactions}
+          columns={columns}
+          loading={isLoading}
+          bordered
+          size="small"
+          pagination={{ pageSize: 8, size: "small" }}
+          scroll={{ x: 900 }}
+          className="erp-table"
+        />
+      </div>
     </div>
   );
 };

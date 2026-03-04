@@ -16,7 +16,7 @@ function Permissions() {
     useState<Permission | null>(null);
   const [form] = Form.useForm();
 
-  const { data, isLoading, refetch } = useGetPermissions();
+  const { data = [], isLoading, refetch } = useGetPermissions();
   const createMutation = useCreatePermission();
   const updateMutation = useUpdatePermission();
   const deleteMutation = useDeletePermission();
@@ -68,23 +68,25 @@ function Permissions() {
     {
       title: "Permission Name",
       dataIndex: "name",
+      responsive: ["xs", "sm", "md", "lg"],
       render: (name: string) => (
-        <span style={{ fontWeight: 500 }}>
+        <span className="font-medium text-sm sm:text-base">
           {name.toUpperCase()}
         </span>
       ),
     },
     {
       title: "Action",
+      responsive: ["xs", "sm", "md", "lg"],
       render: (_: any, record: Permission) => (
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => {
               setEditingPermission(record);
               form.setFieldsValue({ name: record.name });
               setOpenModal(true);
             }}
-            className="px-3 py-1 text-sm rounded bg-[#00264d] text-white"
+            className="px-3 py-1 text-xs sm:text-sm rounded bg-[#00264d] text-white w-full sm:w-auto"
           >
             Edit
           </button>
@@ -93,7 +95,7 @@ function Permissions() {
             title="Are you sure?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <button className="px-3 py-1 text-sm rounded bg-red-600 text-white">
+            <button className="px-3 py-1 text-xs sm:text-sm rounded bg-red-600 text-white w-full sm:w-auto">
               Delete
             </button>
           </Popconfirm>
@@ -103,11 +105,16 @@ function Permissions() {
   ];
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Permissions</h2>
+    <div className="p-3 sm:p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">
+          Permissions
+        </h2>
+
         <Button
           type="primary"
+          className="w-full sm:w-auto"
           onClick={() => {
             setEditingPermission(null);
             form.resetFields();
@@ -118,20 +125,27 @@ function Permissions() {
         </Button>
       </div>
 
-      <Table
-        rowKey="_id"
-        columns={columns}
-        dataSource={data}
-        loading={isLoading}
-        bordered
-        className="erp-table"
-      />
+      {/* Table Wrapper for Horizontal Scroll */}
+      <div className="overflow-x-auto">
+        <Table
+          rowKey="_id"
+          columns={columns}
+          dataSource={data}
+          loading={isLoading}
+          pagination={{ pageSize: 8 }}
+          bordered
+          className="erp-table min-w-[500px]"
+        />
+      </div>
 
+      {/* Modal */}
       <Modal
         open={openModal}
         title={editingPermission ? "Edit Permission" : "Create Permission"}
         onCancel={closeModal}
         onOk={() => form.submit()}
+        width={window.innerWidth < 640 ? "90%" : 500}
+        centered
       >
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item
@@ -139,7 +153,11 @@ function Permissions() {
             label="Permission"
             rules={[{ required: true, message: "Select permission" }]}
           >
-            <Select placeholder="Select Permission">
+            <Select
+              placeholder="Select Permission"
+              size="large"
+              showSearch
+            >
               {DASH_ACCESSES.map((item) => (
                 <Select.Option key={item} value={item}>
                   {item.toUpperCase()}
@@ -149,7 +167,7 @@ function Permissions() {
           </Form.Item>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 }
 
